@@ -65,7 +65,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         className="fixed top-4 z-[60] flex items-start gap-3 transition-all duration-300 pointer-events-none"
         style={{ left: sidebarOpen ? 'calc(20rem + 1rem)' : '1rem' }}
     >
-        <div 
+        <div
+            role="toolbar"
+            aria-label="Battlefield tools"
             className={`
                 bg-grim-900/90 backdrop-blur backdrop-brightness-50 border border-grim-600 rounded-full px-2 py-1.5 flex items-center gap-2 shadow-2xl transition-all duration-300 pointer-events-auto
             `}
@@ -77,10 +79,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                         <button
                             key={tool.mode}
                             onClick={() => setMode(tool.mode)}
+                            aria-label={`${tool.label} tool (${tool.shortcut})`}
+                            aria-pressed={isActive}
                             className={`
                                 relative flex items-center justify-center gap-2 rounded-full transition-all duration-300 ease-out group
-                                ${isActive 
-                                    ? 'bg-grim-gold text-grim-900 px-4 py-2 shadow-[0_0_15px_rgba(251,191,36,0.4)] scale-105 z-10 font-bold ring-2 ring-white/20' 
+                                ${isActive
+                                    ? 'bg-grim-gold text-grim-900 px-4 py-2 shadow-[0_0_15px_rgba(251,191,36,0.4)] scale-105 z-10 font-bold ring-2 ring-white/20'
                                     : 'text-text-muted hover:text-text-primary hover:bg-grim-800 w-10 h-10'
                                 }
                             `}
@@ -106,8 +110,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 {/* Secondary Actions */}
                 <div className="flex items-center gap-1">
                     {/* Group 0: Sidebar Toggle */}
-                    <button 
+                    <button
                         onClick={toggleSidebar}
+                        aria-label={sidebarOpen ? "Close Sidebar (O)" : "Open Sidebar (O)"}
+                        aria-pressed={sidebarOpen}
                         className={`relative group p-2 rounded-full transition-colors ${sidebarOpen ? 'text-grim-gold bg-grim-800' : 'text-text-muted hover:text-text-primary hover:bg-grim-800'}`}
                     >
                         <PanelLeft size={18} />
@@ -117,17 +123,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     <div className="w-px h-6 bg-grim-700 mx-1 opacity-50" />
 
                     {/* Group 1: History */}
-                    <button 
+                    <button
                         onClick={undo}
                         disabled={!canUndo}
+                        aria-label="Undo (Ctrl+Z)"
                         className="relative group p-2 text-text-muted hover:text-text-primary disabled:opacity-20 disabled:cursor-not-allowed hover:bg-grim-800 rounded-full transition-colors"
                     >
                         <Undo2 size={18} />
                         <Tooltip text="Undo" shortcut="Ctrl+Z" />
                     </button>
-                    <button 
+                    <button
                         onClick={redo}
                         disabled={!canRedo}
+                        aria-label="Redo (Ctrl+Shift+Z)"
                         className="relative group p-2 text-text-muted hover:text-text-primary disabled:opacity-20 disabled:cursor-not-allowed hover:bg-grim-800 rounded-full transition-colors"
                     >
                         <Redo2 size={18} />
@@ -137,16 +145,20 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     <div className="w-px h-6 bg-grim-700 mx-1 opacity-50" />
 
                     {/* Group 2: View & Lock Settings */}
-                    <button 
+                    <button
                         onClick={toggleTerrainLock}
+                        aria-label={isTerrainLocked ? "Unlock Terrain (L)" : "Lock Terrain (L)"}
+                        aria-pressed={isTerrainLocked}
                         className={`relative group p-2 rounded-full transition-colors ${isTerrainLocked ? 'text-grim-gold bg-grim-800' : 'text-text-muted hover:text-text-primary hover:bg-grim-800'}`}
                     >
                         {isTerrainLocked ? <Lock size={18} /> : <Unlock size={18} />}
                         <Tooltip text={isTerrainLocked ? "Unlock Terrain" : "Lock Terrain"} shortcut="L" />
                     </button>
 
-                    <button 
+                    <button
                         onClick={toggleTerrainVisibility}
+                        aria-label={isTerrainVisible ? "Hide Terrain (H)" : "Show Terrain (H)"}
+                        aria-pressed={!isTerrainVisible}
                         className={`relative group p-2 rounded-full transition-colors ${!isTerrainVisible ? 'text-grim-gold bg-grim-800' : 'text-text-muted hover:text-text-primary hover:bg-grim-800'}`}
                     >
                         <Mountain size={18} />
@@ -158,8 +170,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                         <Tooltip text={isTerrainVisible ? "Hide Terrain" : "Show Terrain"} shortcut="H" />
                     </button>
 
-                    <button 
+                    <button
                         onClick={toggleZoneVisibility}
+                        aria-label={areZonesVisible ? "Hide Deployment Zones" : "Show Deployment Zones"}
+                        aria-pressed={!areZonesVisible}
                         className={`relative group p-2 rounded-full transition-colors ${!areZonesVisible ? 'text-grim-gold bg-grim-800' : 'text-text-muted hover:text-text-primary hover:bg-grim-800'}`}
                     >
                         <SquareDashed size={18} />
@@ -174,23 +188,25 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     <div className="w-px h-6 bg-grim-700 mx-1 opacity-50" />
 
                     {/* Group 3: Cleanup */}
-                    <button 
+                    <button
                         onClick={clearLines}
+                        aria-label="Clear Drawn Lines ([)"
                         className="relative group p-2 text-text-muted hover:text-text-primary hover:bg-grim-800 rounded-full transition-colors"
                     >
                         <Eraser size={18} />
                         <Tooltip text="Clear Drawn Lines" shortcut="[" />
                     </button>
 
-                    <button 
+                    <button
                         onClick={onClearText}
+                        aria-label="Clear Text Notes"
                         className="relative group p-2 text-text-muted hover:text-text-primary hover:bg-grim-800 rounded-full transition-colors"
                     >
                         <MessageSquareX size={18} />
                         <Tooltip text="Clear Text Notes" />
                     </button>
                     
-                    <button 
+                    <button
                         onClick={() => {
                             if (confirmClearZones) {
                                 clearDeploymentZones();
@@ -199,10 +215,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                                 setConfirmClearZones(true);
                             }
                         }}
+                        aria-label={confirmClearZones ? "Confirm clear deployment zones" : "Clear Deployment Zones (])"}
                         className={`
                             relative group transition-all duration-200 flex items-center justify-center gap-1
-                            ${confirmClearZones 
-                                ? 'bg-red-600 text-white px-3 py-1.5 rounded-full hover:bg-red-700 shadow-lg' 
+                            ${confirmClearZones
+                                ? 'bg-red-600 text-white px-3 py-1.5 rounded-full hover:bg-red-700 shadow-lg'
                                 : 'p-2 text-text-muted hover:text-red-500 hover:bg-grim-800 rounded-full'
                             }
                         `}
@@ -216,8 +233,10 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
                     {/* Group 4: Helpers */}
                     {toggleEdgeMeasurements && (
-                        <button 
+                        <button
                             onClick={toggleEdgeMeasurements}
+                            aria-label={`Edge Distances ${showEdgeMeasurements ? 'on' : 'off'} (X)`}
+                            aria-pressed={!!showEdgeMeasurements}
                             className={`relative group p-2 rounded-full transition-colors ${showEdgeMeasurements ? 'text-cyan-400 bg-grim-800 shadow-[0_0_10px_rgba(34,211,238,0.2)]' : 'text-text-muted hover:text-text-primary hover:bg-grim-800'}`}
                         >
                             <Maximize size={18} />
@@ -225,8 +244,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                         </button>
                     )}
 
-                    <button 
+                    <button
                         onClick={cycleAuraRadius}
+                        aria-label={`Toggle Auras: ${auraRadius ? auraRadius + ' inches' : 'Off'} (R)`}
                         className={`relative group p-2 rounded-full transition-colors flex items-center justify-center ${auraRadius !== null ? 'text-teal-400 bg-grim-800 shadow-[0_0_10px_rgba(45,212,191,0.2)]' : 'text-text-muted hover:text-text-primary hover:bg-grim-800'}`}
                     >
                         {auraRadius !== null ? (

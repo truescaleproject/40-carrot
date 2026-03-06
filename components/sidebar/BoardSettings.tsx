@@ -3,6 +3,7 @@
 import React from 'react';
 import { Grid, Image as ImageIcon, Save, FolderOpen, Map as MapIcon, CopyPlus, Trash2 } from 'lucide-react';
 import { PRESET_MAPS } from '../../data/presetMaps';
+import { MAX_BOARD_COUNT } from '../../constants';
 
 interface BoardSettingsProps {
     boardWidth: number;
@@ -113,9 +114,9 @@ export const BoardSettings: React.FC<BoardSettingsProps> = ({
                 <div className="flex gap-2">
                      <button 
                         onClick={handleDuplicateBoard}
-                        disabled={boardCount >= 9}
-                        className={`flex-1 bg-grim-800 text-grim-gold text-[10px] py-1 px-2 rounded flex items-center justify-center gap-1 transition-colors border border-grim-700 ${boardCount >= 9 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-grim-700'}`}
-                        title={boardCount >= 9 ? "Maximum of 9 battlefields reached" : "Duplicate current battlefield"}
+                        disabled={boardCount >= MAX_BOARD_COUNT}
+                        className={`flex-1 bg-grim-800 text-grim-gold text-[10px] py-1 px-2 rounded flex items-center justify-center gap-1 transition-colors border border-grim-700 ${boardCount >= MAX_BOARD_COUNT ? 'opacity-50 cursor-not-allowed' : 'hover:bg-grim-700'}`}
+                        title={boardCount >= MAX_BOARD_COUNT ? `Maximum of ${MAX_BOARD_COUNT} battlefields reached` : "Duplicate current battlefield"}
                      >
                         <CopyPlus size={12}/> Add Board
                     </button>

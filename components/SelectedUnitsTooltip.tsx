@@ -205,37 +205,36 @@ const TooltipPanel: React.FC<TooltipPanelProps> = ({
       return { x: screenX, y: screenY };
   }, [isFloating, data, elements, getViewport]);
 
-  if (isFloating && !anchorPos) return null;
+  // For floating: wait for cursor position so it pops up right at the mouse (no animation)
+  if (isFloating && !cursorScreenPos) return null;
 
   const isSingleModelSelection = data.groups.length === 1 && data.totalCount === 1;
 
   return (
-    <div 
+    <div
       className={`
-        z-40 transition-all duration-300 ease-in-out
-        ${isFloating 
-            ? 'fixed pointer-events-none w-auto max-w-xs' 
-            : `fixed bottom-[4.5rem] max-w-md w-full ${sidebarOpen ? 'left-[21rem]' : 'left-4'}`
+        ${isFloating
+            ? 'fixed z-[65] pointer-events-none w-auto max-w-xs'
+            : `fixed z-[55] bottom-[4.5rem] max-w-md w-full transition-all duration-300 ease-in-out animate-in fade-in ${sidebarOpen ? 'left-[21rem]' : 'left-4'}`
         }
-        bg-grim-900/95 backdrop-blur-md 
+        bg-grim-900/95 backdrop-blur-md
         border ${isFloating ? 'border-grim-700' : 'border-grim-gold/50'} rounded-lg shadow-2xl overflow-hidden
-        animate-in fade-in
       `}
       onClick={!isFloating ? handleClick : undefined}
       onMouseMove={!isFloating ? handleMouseMove : undefined}
       onMouseLeave={() => setIsOverUnit(false)}
       onWheel={handleWheel}
       style={isFloating ? {
-          left: cursorScreenPos?.x ?? anchorPos?.x,
+          left: (cursorScreenPos?.x ?? anchorPos?.x ?? 0) + 16,
           top: (cursorScreenPos?.y ?? anchorPos?.y ?? 0) - 15,
-          transform: 'translate(-50%, -100%)',
+          transform: 'translateY(-100%)',
           cursor: 'default'
       } : { cursor: isOverUnit ? 'pointer' : 'default' }}
       title={isOverUnit && !isFloating ? "Click to select underlying unit" : undefined}
     >
-      {/* Floating Tail Arrow */}
+      {/* Floating Tail Arrow - points left toward the cursor */}
       {isFloating && (
-          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-grim-700"></div>
+          <div className="absolute top-[calc(100%-12px)] right-full -mr-px w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-grim-700"></div>
       )}
 
       {/* --- HEADER --- */}
@@ -260,10 +259,14 @@ const TooltipPanel: React.FC<TooltipPanelProps> = ({
             <div key={idx} className="bg-grim-800/40 rounded border border-grim-700/50 overflow-hidden">
               
               {/* Profile Header Row */}
-              <div 
+              <div
                 className={`p-2 flex flex-col gap-2 ${!isFloating ? 'hover:bg-grim-800/60 transition-colors cursor-pointer' : ''}`}
                 onClick={!isFloating ? () => toggleProfile(idx) : undefined}
-                role="button"
+                onKeyDown={!isFloating ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProfile(idx); } } : undefined}
+                role={!isFloating ? 'button' : undefined}
+                tabIndex={!isFloating ? 0 : undefined}
+                aria-expanded={!isFloating ? isExpanded : undefined}
+                aria-label={!isFloating ? `${group.label} profile, ${isExpanded ? 'collapse' : 'expand'}` : undefined}
               >
                 {!isSingleModelSelection && (
                     <div className="flex items-center justify-between">
@@ -377,17 +380,19 @@ const TooltipPanel: React.FC<TooltipPanelProps> = ({
                             <div className="flex items-center bg-grim-900 border border-grim-700 rounded px-1 py-0.5 gap-2">
                                 <Heart size={10} className="text-slate-500"/>
                                 <div className="flex items-center gap-1">
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); onAdjustWounds(group.modelIds, -1); }}
                                         className="w-4 h-4 flex items-center justify-center rounded bg-grim-800 text-red-400 hover:bg-red-900/50 hover:text-red-300 transition-colors font-bold text-[10px]"
                                         title="Damage"
+                                        aria-label={`Deal 1 damage to ${group.label}`}
                                     >
                                         -
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={(e) => { e.stopPropagation(); onAdjustWounds(group.modelIds, 1); }}
                                         className="w-4 h-4 flex items-center justify-center rounded bg-grim-800 text-green-400 hover:bg-green-900/50 hover:text-green-300 transition-colors font-bold text-[10px]"
                                         title="Heal"
+                                        aria-label={`Heal 1 wound on ${group.label}`}
                                     >
                                         +
                                     </button>

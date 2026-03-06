@@ -54,6 +54,3 @@ export interface ParsedArmyListEntry {
   rawLines?: string[]; // The bullet points under the unit name
 }
 
-export interface GenerationResponse {
-  units: UnitCardData[];
-}

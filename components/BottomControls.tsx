@@ -250,6 +250,7 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
                 onClick={() => setActiveBottomPanel('NONE')}
                 className="absolute top-2.5 right-2.5 text-slate-400 hover:text-white bg-grim-800/80 p-1.5 rounded-full hover:bg-grim-700 transition-colors z-50 backdrop-blur"
                 title="Close Panel (Esc)"
+                aria-label="Close panel"
             >
                 <X size={14}/>
             </button>
@@ -257,7 +258,7 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
       )}
 
       <div className="bg-grim-900/95 backdrop-blur border-t border-grim-800 pointer-events-auto shadow-2xl relative z-40">
-        <div className="flex justify-between items-stretch h-14 max-w-3xl mx-auto px-1">
+        <div className="flex justify-between items-stretch h-14 max-w-3xl mx-auto px-1" role="tablist" aria-label="Bottom panels">
           {tabs.map((tab) => {
             const isActive = activeBottomPanel === tab.id;
             const Icon = tab.icon;
@@ -265,6 +266,9 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
               <button
                 key={tab.id}
                 onClick={() => togglePanel(tab.id)}
+                role="tab"
+                aria-selected={isActive}
+                aria-label={tab.label}
                 className={`
                   flex-1 flex flex-col items-center justify-center gap-0.5 transition-all duration-200 relative group rounded-lg mx-0.5
                   ${isActive ? 'text-text-primary bg-grim-800/50' : 'text-text-muted hover:text-text-secondary hover:bg-grim-800/30'}

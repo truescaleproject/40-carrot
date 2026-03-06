@@ -20,7 +20,7 @@ import {
   AppSettings, ElementType, ModelStats, Weapon, AiDeploymentItem,
   ViewportInfo
 } from './types';
-import { BOARD_OFFSET, DEFAULT_MODEL_STATS, COLORS, APP_VERSION } from './constants';
+import { BOARD_OFFSET, DEFAULT_MODEL_STATS, COLORS, APP_VERSION, MM_PER_INCH } from './constants';
 import { safeLocalStorageGet, safeLocalStorageSet } from './utils/storageUtils';
 import { snapToGrid, findSafeGroupPosition, checkCollision, findSafePosition, detectZones, getHexPositions } from './utils/boardUtils';
 import { migrateSaveData } from './utils/migrationUtils';
@@ -41,7 +41,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 const DEFAULT_BOARD_WIDTH = 60;
 const DEFAULT_BOARD_HEIGHT = 44;
-const DEFAULT_PPI = 25.4;
+const DEFAULT_PPI = MM_PER_INCH;
 
 export const App = () => {
   // State Initialization

@@ -299,12 +299,12 @@ export const DataCardsPanel: React.FC<DataCardsPanelProps> = ({ isOpen, onClose,
   }, [units, smartLayout, cardSize.height, cardSize.width]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-grim-900 print:hidden">
+    <div className="flex flex-col h-full w-full bg-grim-900 print:hidden" role="dialog" aria-label="Data Cards Panel">
 
       {/* Top Bar */}
       <header className="bg-grim-900 border-b border-grim-700 px-4 py-2 flex justify-between items-center shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={onClose} className="flex items-center gap-1.5 text-slate-400 hover:text-white text-xs font-bold px-2 py-1.5 rounded hover:bg-grim-800 transition-colors" title="Back to Battlefield">
+          <button onClick={onClose} className="flex items-center gap-1.5 text-slate-400 hover:text-white text-xs font-bold px-2 py-1.5 rounded hover:bg-grim-800 transition-colors" title="Back to Battlefield" aria-label="Back to Battlefield">
             <ArrowLeft size={16} /> Battlefield
           </button>
           <div className="h-5 w-px bg-grim-700" />

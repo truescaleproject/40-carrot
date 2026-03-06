@@ -1,6 +1,6 @@
 
 import { BoardElement, ElementType, DrawingLine, DeploymentZone } from '../types';
-import { BOARD_OFFSET } from '../constants';
+import { BOARD_OFFSET, BOARDS_PER_ROW } from '../constants';
 
 const MAX_ITERATIONS = 1500; // Safety break for spiral searches
 const EPSILON = 0.0001;
@@ -87,7 +87,7 @@ export const snapToGrid = (
     const hGap = 12 * pixelsPerInch;
     const hPitch = boardPixelWidth + hGap;
     const vPitch = boardPixelHeight + (20 * pixelsPerInch);
-    const BOARDS_PER_ROW = 3;
+
 
     const relX = x - BOARD_OFFSET;
     const relY = y - BOARD_OFFSET;
@@ -434,7 +434,7 @@ const getBoardBounds = (boardIndex: number, boardPixelWidth: number, boardPixelH
     const hGap = 12 * pixelsPerInch;
     const hPitch = boardPixelWidth + hGap;
     const vPitch = boardPixelHeight + (20 * pixelsPerInch);
-    const BOARDS_PER_ROW = 3;
+
     const clampedRow = Math.floor(boardIndex / BOARDS_PER_ROW);
     const clampedCol = boardIndex % BOARDS_PER_ROW;
     const startX = BOARD_OFFSET + (clampedCol * hPitch);
@@ -487,7 +487,7 @@ export const detectZones = (
     const hGap = 12 * pixelsPerInch;
     const hPitch = boardPixelWidth + hGap;
     const vPitch = boardPixelHeight + (20 * pixelsPerInch);
-    const BOARDS_PER_ROW = 3;
+
     const relX = lastLineMid.x - BOARD_OFFSET;
     const relY = lastLineMid.y - BOARD_OFFSET;
     let col = Math.floor(relX / hPitch);

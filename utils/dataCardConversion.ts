@@ -1,9 +1,10 @@
 import { UnitCardData } from '../types/dataCards';
 import { BoardElement, ElementType, Weapon } from '../types';
+import { MM_PER_INCH, DEFAULT_BASE_SIZE_MM } from '../constants';
 import { getBaseSize } from '../services/baseSizeService';
 
 function parseBaseSize(sizeStr: string): { w: number; h: number } {
-    if (!sizeStr) return { w: 32, h: 32 };
+    if (!sizeStr) return { w: DEFAULT_BASE_SIZE_MM, h: DEFAULT_BASE_SIZE_MM };
     const clean = sizeStr.toLowerCase().replace('mm', '').replace('oval base', '').trim();
     if (clean.includes('x')) {
         const parts = clean.split('x').map(s => parseFloat(s.trim()));
@@ -13,7 +14,7 @@ function parseBaseSize(sizeStr: string): { w: number; h: number } {
     }
     const d = parseFloat(clean);
     if (!isNaN(d)) return { w: d, h: d };
-    return { w: 32, h: 32 };
+    return { w: DEFAULT_BASE_SIZE_MM, h: DEFAULT_BASE_SIZE_MM };
 }
 
 function convertWeapons(unit: UnitCardData): Weapon[] {
@@ -61,8 +62,8 @@ export function convertUnitCardsToBoardElements(
         const modelsPerSquad = unit.modelsPerSquad || [unit.modelCount || 1];
         const baseSizeStr = getBaseSize(unit.name) || unit.baseSize || '32mm';
         const { w: baseMm, h: baseHMm } = parseBaseSize(baseSizeStr);
-        const widthPx = (baseMm / 25.4) * pixelsPerInch;
-        const heightPx = (baseHMm / 25.4) * pixelsPerInch;
+        const widthPx = (baseMm / MM_PER_INCH) * pixelsPerInch;
+        const heightPx = (baseHMm / MM_PER_INCH) * pixelsPerInch;
         const weapons = convertWeapons(unit);
         const stats = {
             m: unit.stats.m || '6"',

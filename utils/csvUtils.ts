@@ -1,6 +1,6 @@
 
 import { BoardElement, ElementType, ModelStats, Weapon } from '../types';
-import { SCALE_PIXELS_PER_INCH, WEAPON_MODIFIER_DEFINITIONS } from '../constants';
+import { WEAPON_MODIFIER_DEFINITIONS, MM_PER_INCH, DEFAULT_BASE_SIZE_MM } from '../constants';
 
 // --- Types ---
 export interface CsvRow {
@@ -51,7 +51,7 @@ const serializeWeaponProfile = (w: Weapon): string => {
 };
 
 const normalizeBaseSize = (val: string): string => {
-    if (!val) return '32';
+    if (!val) return String(DEFAULT_BASE_SIZE_MM);
     return val.toLowerCase().replace('mm', '').trim();
 };
 
@@ -136,7 +136,7 @@ export const generateArmyCsv = (elements: BoardElement[], targetSide: 'ATTACKER'
         const modelCounts: Record<string, { profile: ModelProfile, qty: number }> = {};
 
         squadModels.forEach(m => {
-            const baseSizeMm = Math.round((m.width / pixelsPerInch) * 25.4);
+            const baseSizeMm = Math.round((m.width / pixelsPerInch) * MM_PER_INCH);
             // Create a hash of stats/weapons to distinguish profiles (e.g. Sgt vs Trooper)
             const statsStr = JSON.stringify(m.stats);
             const profileHash = `${m.label}|${baseSizeMm}|${m.color}|${statsStr}|${m.currentWounds}`;
@@ -391,7 +391,7 @@ export const convertRowsToElements = (rows: CsvRow[], pixelsPerInch: number, tar
                 const qty = parseInt(row.modelQty) || 1;
                 let widthMm = parseFloat(row.baseSize);
                 if (isNaN(widthMm) || widthMm <= 0) widthMm = 32;
-                const widthPx = (widthMm / 25.4) * pixelsPerInch;
+                const widthPx = (widthMm / MM_PER_INCH) * pixelsPerInch;
 
                 const stats = buildStatsFromRow(row);
                 const wCurrent = parseInt(row.wCurrent);

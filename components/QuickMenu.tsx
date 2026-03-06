@@ -86,9 +86,11 @@ export const QuickMenu: React.FC<QuickMenuProps> = ({ onAdd }) => {
       `}>
         
         {/* Handle (Always visible) */}
-        <div 
+        <div
           className="cursor-grab active:cursor-grabbing text-grim-500 hover:text-grim-gold transition-colors flex items-center justify-center h-full w-6 shrink-0 rounded hover:bg-white/5 relative group"
           onPointerDown={handleDragStart}
+          role="separator"
+          aria-label="Drag to reposition quick menu"
         >
           <GripVertical size={14} />
           <Tooltip text="Drag Menu" />
@@ -100,23 +102,26 @@ export const QuickMenu: React.FC<QuickMenuProps> = ({ onAdd }) => {
         {/* Expanded Content */}
         {isOpen ? (
           <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-            <button 
+            <button
               onClick={() => onAdd(ElementType.MODEL)}
+              aria-label="Add Unit"
               className="w-8 h-8 rounded-full bg-grim-800 border border-grim-700 flex items-center justify-center text-blue-400 hover:bg-grim-700 hover:text-white hover:border-blue-500 transition-all shadow-sm relative group"
             >
               <Swords size={14} />
               <Tooltip text="Add Unit" />
             </button>
-            <button 
+            <button
               onClick={() => onAdd(ElementType.TERRAIN)}
+              aria-label="Add Terrain"
               className="w-8 h-8 rounded-full bg-grim-800 border border-grim-700 flex items-center justify-center text-slate-400 hover:bg-grim-700 hover:text-white hover:border-slate-500 transition-all shadow-sm relative group"
             >
               <Mountain size={14} />
               <Tooltip text="Add Terrain" />
             </button>
             <div className="w-px h-6 bg-grim-700 mx-1"></div>
-            <button 
+            <button
               onClick={() => setIsOpen(false)}
+              aria-label="Close quick menu"
               className="w-6 h-6 rounded-full flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-grim-800 transition-colors relative group"
             >
               <X size={14} />
@@ -124,8 +129,9 @@ export const QuickMenu: React.FC<QuickMenuProps> = ({ onAdd }) => {
             </button>
           </div>
         ) : (
-          <button 
+          <button
             onClick={() => setIsOpen(true)}
+            aria-label="Open quick actions menu"
             className="flex-1 h-full flex items-center justify-center text-grim-gold hover:text-white hover:scale-110 transition-transform rounded hover:bg-white/5 relative group"
           >
             <Plus size={16} strokeWidth={3} />
