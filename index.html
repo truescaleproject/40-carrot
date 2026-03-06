@@ -1,0 +1,235 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="40 Carrot - Virtual tabletop for practicing sci-fi wargame scenarios with unit management, measurement, dice rolling, and AI tactical advice." />
+    <meta name="theme-color" content="#0f172a" />
+    <title>40 Carrot — Virtual Tabletop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Cinzel:wght@400;700;900&family=Orbitron:wght@400..900&family=Science+Gothic:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              'gothic': ['"Cinzel"', 'serif'],
+              'science': ['"Science Gothic"', '"Orbitron"', 'sans-serif'],
+            },
+            colors: {
+              grim: {
+                900: 'var(--color-grim-900)',
+                800: 'var(--color-grim-800)',
+                700: 'var(--color-grim-700)',
+                600: 'var(--color-grim-600)',
+                500: 'var(--color-grim-500)',
+                accent: 'var(--color-grim-accent)',
+                gold: 'var(--color-grim-gold)'
+              },
+              text: {
+                primary: 'var(--text-primary)',
+                secondary: 'var(--text-secondary)',
+                muted: 'var(--text-muted)',
+              }
+            },
+            cursor: {
+              'crosshair': 'crosshair',
+              'grab': 'grab',
+              'grabbing': 'grabbing',
+            },
+            keyframes: {
+              'fade-in': {
+                from: { opacity: '0' },
+                to: { opacity: '1' },
+              },
+              'slide-in-from-top': {
+                from: { transform: 'translateY(-0.5rem)', opacity: '0' },
+                to: { transform: 'translateY(0)', opacity: '1' },
+              },
+              'slide-in-from-bottom': {
+                from: { transform: 'translateY(0.5rem)', opacity: '0' },
+                to: { transform: 'translateY(0)', opacity: '1' },
+              },
+              'slide-in-from-left': {
+                from: { transform: 'translateX(-0.5rem)', opacity: '0' },
+                to: { transform: 'translateX(0)', opacity: '1' },
+              },
+              'slide-in-from-right': {
+                from: { transform: 'translateX(100%)', opacity: '0' },
+                to: { transform: 'translateX(0)', opacity: '1' },
+              },
+            },
+            animation: {
+              'fade-in': 'fade-in 0.2s ease-out',
+              'slide-in-top': 'slide-in-from-top 0.3s ease-out',
+              'slide-in-bottom': 'slide-in-from-bottom 0.3s ease-out',
+              'slide-in-left': 'slide-in-from-left 0.2s ease-out',
+              'slide-in-right': 'slide-in-from-right 0.3s ease-out',
+            },
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--color-grim-900);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--color-grim-700);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-grim-600);
+      }
+      body {
+        background-color: var(--color-grim-900);
+        color: var(--text-primary);
+      }
+      ::selection {
+        background: var(--color-grim-accent);
+        color: white;
+      }
+
+      /* Scrollbar utility classes */
+      .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+      .scrollbar-thumb-grim-700::-webkit-scrollbar-thumb { background: var(--color-grim-700); border-radius: 2px; }
+      .scrollbar-track-transparent::-webkit-scrollbar-track { background: transparent; }
+
+      /* Animate-in utility (used by panels/overlays) */
+      .animate-in {
+        animation-duration: 0.3s;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+      }
+      .fade-in { animation-name: fade-in; }
+      .slide-in-from-top-2 { animation-name: slide-in-from-top; }
+      .slide-in-from-top-10 { animation-name: slide-in-from-top; animation-duration: 0.5s; }
+      .slide-in-from-bottom-2 { animation-name: slide-in-from-bottom; }
+      .slide-in-from-left-2 { animation-name: slide-in-from-left; }
+      .slide-in-from-right { animation-name: slide-in-from-right; }
+
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slide-in-from-top {
+        from { transform: translateY(-0.5rem); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes slide-in-from-bottom {
+        from { transform: translateY(0.5rem); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes slide-in-from-left {
+        from { transform: translateX(-0.5rem); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slide-in-from-right {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+
+      /* Safe area insets for mobile */
+      .pt-safe-top { padding-top: env(safe-area-inset-top, 0px); }
+      .pb-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+      /* Loading splash */
+      #splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--color-grim-900, #0f172a);
+        color: var(--text-primary, #e2e8f0);
+        z-index: 9999;
+        transition: opacity 0.4s ease-out;
+        font-family: 'Science Gothic', 'Orbitron', sans-serif;
+      }
+      #splash.hidden { opacity: 0; pointer-events: none; }
+      #splash .splash-title {
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        color: #fbbf24;
+        margin-bottom: 0.5rem;
+      }
+      #splash .splash-sub {
+        font-size: 0.7rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 2rem;
+      }
+      #splash .splash-bar {
+        width: 160px;
+        height: 2px;
+        background: #334155;
+        border-radius: 1px;
+        overflow: hidden;
+      }
+      #splash .splash-bar-inner {
+        width: 40%;
+        height: 100%;
+        background: #fbbf24;
+        border-radius: 1px;
+        animation: splash-load 1.2s ease-in-out infinite;
+      }
+      @keyframes splash-load {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(400%); }
+      }
+
+      /* Data Cards Print Styles */
+      @media print {
+        body * { visibility: hidden !important; }
+        #print-root, #print-root * { visibility: visible !important; }
+        #print-root {
+          display: block !important;
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+        }
+        .print-sheet {
+          page-break-after: always;
+          page-break-inside: avoid;
+        }
+        .print-sheet:last-child {
+          page-break-after: auto;
+        }
+        .no-print, .print\:hidden { display: none !important; }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.32.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/"
+  }
+}
+</script>
+</head>
+  <body class="overflow-hidden h-screen w-screen select-none">
+    <div id="splash">
+      <div class="splash-title">40 CARROT</div>
+      <div class="splash-sub">Virtual Tabletop</div>
+      <div class="splash-bar"><div class="splash-bar-inner"></div></div>
+    </div>
+    <div id="root"></div>
+    <div id="print-root" style="display:none"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
