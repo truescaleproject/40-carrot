@@ -9,13 +9,12 @@ interface WelcomeBannerProps {
 }
 
 export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ onDismiss, sidebarOpen = false }) => {
-  const leftStyle = sidebarOpen ? 'calc(50% + 10rem)' : '50%';
-
   return (
     <div
-      className="fixed top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[100] w-[90%] max-w-2xl animate-in fade-in slide-in-from-top-10 duration-500 transition-[left] ease-in-out"
-      style={{ left: leftStyle }}
+      className="fixed inset-0 z-[100] flex items-center justify-center transition-[left] ease-in-out duration-500 pointer-events-none"
+      style={{ left: sidebarOpen ? '320px' : '0px' }}
     >
+      <div className="w-[90%] max-w-2xl animate-in fade-in slide-in-from-top-10 duration-500 pointer-events-auto">
       <div className="bg-grim-900/95 backdrop-blur-md border border-grim-gold/60 rounded-xl shadow-2xl overflow-hidden">
         <div className="bg-grim-800/50 p-4 border-b border-grim-700 flex justify-between items-center">
           <div>
@@ -75,6 +74,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ onDismiss, sidebar
             Begin Session
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
