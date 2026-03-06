@@ -13,7 +13,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ onDismiss, sidebar
 
   return (
     <div
-      className="fixed top-[120px] transform -translate-x-1/2 z-[100] w-[90%] max-w-2xl animate-in fade-in slide-in-from-top-10 duration-500 transition-[left] ease-in-out"
+      className="fixed top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[100] w-[90%] max-w-2xl animate-in fade-in slide-in-from-top-10 duration-500 transition-[left] ease-in-out"
       style={{ left: leftStyle }}
     >
       <div className="bg-grim-900/95 backdrop-blur-md border border-grim-gold/60 rounded-xl shadow-2xl overflow-hidden">
