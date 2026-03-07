@@ -19,11 +19,6 @@ const ArmyPlanner: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
 
-  const persist = useCallback((updated: BuildProject[]) => {
-    setProjects(updated);
-    safeLocalStorageSet('buildProjects', JSON.stringify(updated));
-  }, []);
-
   const addProject = useCallback(() => {
     const p: BuildProject = {
       id: genId(), unitName: 'New Unit', status: 'planned',
@@ -170,24 +165,31 @@ const BitLibrary: React.FC = () => {
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const save = (updated: BitEntry[]) => {
-    setBits(updated);
-    safeLocalStorageSet('bitLibrary', JSON.stringify(updated));
-  };
-
-  const addBit = () => {
+  const addBit = useCallback(() => {
     const b: BitEntry = { id: genId(), name: 'New Part', kitSource: '', faction: '', quantity: 1, tags: [] };
-    save([b, ...bits]);
+    setBits(prev => {
+      const updated = [b, ...prev];
+      safeLocalStorageSet('bitLibrary', JSON.stringify(updated));
+      return updated;
+    });
     setEditingId(b.id);
-  };
+  }, []);
 
-  const updateBit = (id: string, updates: Partial<BitEntry>) => {
-    save(bits.map(b => b.id === id ? { ...b, ...updates } : b));
-  };
+  const updateBit = useCallback((id: string, updates: Partial<BitEntry>) => {
+    setBits(prev => {
+      const updated = prev.map(b => b.id === id ? { ...b, ...updates } : b);
+      safeLocalStorageSet('bitLibrary', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
-  const deleteBit = (id: string) => {
-    save(bits.filter(b => b.id !== id));
-  };
+  const deleteBit = useCallback((id: string) => {
+    setBits(prev => {
+      const updated = prev.filter(b => b.id !== id);
+      safeLocalStorageSet('bitLibrary', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   const filtered = search
     ? bits.filter(b =>
@@ -315,7 +317,7 @@ const KitbashCanvas: React.FC = () => {
         {layers.map(layer => (
           <div
             key={layer.id}
-            className={`absolute cursor-move border ${selectedLayer === layer.id ? 'border-grim-gold/60' : 'border-transparent hover:border-white/20'}`}
+            className={`absolute cursor-pointer border ${selectedLayer === layer.id ? 'border-grim-gold/60' : 'border-transparent hover:border-white/20'}`}
             style={{
               left: `${layer.x}px`, top: `${layer.y}px`,
               width: `${layer.width}px`, height: `${layer.height}px`,

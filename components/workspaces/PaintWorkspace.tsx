@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import { Palette, Upload, Copy, Pipette } from 'lucide-react';
 import { PaintScheme, PaintRole, PAINT_ROLES } from '../../types/workspace';
-import { generateSchemes, extractPaletteFromImageData, ColorScheme } from '../../utils/colorTheory';
+import { generateSchemes, extractPaletteFromImageData, type ColorScheme } from '../../utils/colorTheory';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/storageUtils';
 import { SectionHeader } from './SectionHeader';
 
