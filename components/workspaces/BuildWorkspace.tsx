@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
-  ChevronDown, ChevronUp, Plus, Trash2, Upload, Image, Edit2, Check, X,
+  Plus, Trash2, Upload, Image, Edit2, Check, X,
   Package, ClipboardList, Layers, Compass
 } from 'lucide-react';
 import { BuildProject, BitEntry, KitbashLayer, BUILD_STATUSES } from '../../types/workspace';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/storageUtils';
+import { SectionHeader } from './SectionHeader';
 
 const genId = () => Math.random().toString(36).substring(2, 11);
 
@@ -18,36 +19,53 @@ const ArmyPlanner: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
 
-  const save = (updated: BuildProject[]) => {
+  const persist = useCallback((updated: BuildProject[]) => {
     setProjects(updated);
     safeLocalStorageSet('buildProjects', JSON.stringify(updated));
-  };
+  }, []);
 
-  const addProject = () => {
+  const addProject = useCallback(() => {
     const p: BuildProject = {
       id: genId(), unitName: 'New Unit', status: 'planned',
       notes: '', conversionNotes: '', createdAt: Date.now(), updatedAt: Date.now(),
     };
-    save([p, ...projects]);
+    setProjects(prev => {
+      const updated = [p, ...prev];
+      safeLocalStorageSet('buildProjects', JSON.stringify(updated));
+      return updated;
+    });
     setEditingId(p.id);
-  };
+  }, []);
 
-  const updateProject = (id: string, updates: Partial<BuildProject>) => {
-    save(projects.map(p => p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p));
-  };
+  const updateProject = useCallback((id: string, updates: Partial<BuildProject>) => {
+    setProjects(prev => {
+      const updated = prev.map(p => p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p);
+      safeLocalStorageSet('buildProjects', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
-  const deleteProject = (id: string) => {
-    save(projects.filter(p => p.id !== id));
-    if (editingId === id) setEditingId(null);
-  };
+  const deleteProject = useCallback((id: string) => {
+    setProjects(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      safeLocalStorageSet('buildProjects', JSON.stringify(updated));
+      return updated;
+    });
+    setEditingId(prev => prev === id ? null : prev);
+  }, []);
 
-  const filtered = filter === 'all' ? projects : projects.filter(p => p.status === filter);
+  const filtered = useMemo(() =>
+    filter === 'all' ? projects : projects.filter(p => p.status === filter),
+    [projects, filter]
+  );
 
-  // Summary stats
-  const stats = BUILD_STATUSES.map(s => ({
-    ...s,
-    count: projects.filter(p => p.status === s.value).length,
-  }));
+  const stats = useMemo(() =>
+    BUILD_STATUSES.map(s => ({
+      ...s,
+      count: projects.filter(p => p.status === s.value).length,
+    })),
+    [projects]
+  );
 
   return (
     <div className="space-y-2">
@@ -386,6 +404,15 @@ const CompositionOverlay: React.FC = () => {
   const [overlayRotation, setOverlayRotation] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const handleOverlayUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setOverlayImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }, []);
+
   const toggleOverlay = (overlay: string) => {
     setActiveOverlays(prev => {
       const next = new Set(prev);
@@ -455,14 +482,7 @@ const CompositionOverlay: React.FC = () => {
             </button>
           </div>
         )}
-        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => setOverlayImage(ev.target?.result as string);
-          reader.readAsDataURL(file);
-          e.target.value = '';
-        }} />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleOverlayUpload} />
       </div>
 
       {/* Overlay Toggles */}
@@ -501,42 +521,36 @@ const CompositionOverlay: React.FC = () => {
 
 // --- Main Build Workspace ---
 export const BuildWorkspace: React.FC = () => {
-  const [expandedSection, setExpandedSection] = useState<'planner' | 'bits' | 'kitbash' | 'composition' | null>('planner');
+  const [expandedSection, setExpandedSection] = useState<string | null>('planner');
 
-  const SectionHeader = ({ title, section, icon: Icon }: { title: string; section: typeof expandedSection; icon: React.ElementType }) => (
-    <button
-      onClick={() => setExpandedSection(expandedSection === section ? null : section)}
-      className="w-full flex items-center justify-between py-2 text-xs font-bold text-slate-400 uppercase tracking-wider hover:text-grim-gold transition-colors"
-    >
-      <span className="flex items-center gap-1.5"><Icon size={12} />{title}</span>
-      {expandedSection === section ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-    </button>
-  );
+  const handleToggleSection = useCallback((section: string) => {
+    setExpandedSection(section || null);
+  }, []);
 
   return (
     <div className="space-y-2">
-      <SectionHeader title="Army Build Planner" section="planner" icon={ClipboardList} />
+      <SectionHeader title="Army Build Planner" section="planner" expandedSection={expandedSection} onToggle={handleToggleSection} icon={ClipboardList} />
       {expandedSection === 'planner' && (
         <div className="animate-in slide-in-from-top-1 duration-200">
           <ArmyPlanner />
         </div>
       )}
 
-      <SectionHeader title="Bit Library" section="bits" icon={Package} />
+      <SectionHeader title="Bit Library" section="bits" expandedSection={expandedSection} onToggle={handleToggleSection} icon={Package} />
       {expandedSection === 'bits' && (
         <div className="animate-in slide-in-from-top-1 duration-200">
           <BitLibrary />
         </div>
       )}
 
-      <SectionHeader title="Kitbash Canvas" section="kitbash" icon={Layers} />
+      <SectionHeader title="Kitbash Canvas" section="kitbash" expandedSection={expandedSection} onToggle={handleToggleSection} icon={Layers} />
       {expandedSection === 'kitbash' && (
         <div className="animate-in slide-in-from-top-1 duration-200">
           <KitbashCanvas />
         </div>
       )}
 
-      <SectionHeader title="Composition Overlay" section="composition" icon={Compass} />
+      <SectionHeader title="Composition Overlay" section="composition" expandedSection={expandedSection} onToggle={handleToggleSection} icon={Compass} />
       {expandedSection === 'composition' && (
         <div className="animate-in slide-in-from-top-1 duration-200">
           <CompositionOverlay />

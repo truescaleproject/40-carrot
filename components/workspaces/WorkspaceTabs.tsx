@@ -15,12 +15,15 @@ const tabs: { mode: WorkspaceMode; icon: React.ElementType; label: string }[] = 
 
 export const WorkspaceTabs: React.FC<WorkspaceTabsProps> = ({ activeMode, onChange }) => {
   return (
-    <div className="flex bg-grim-800 rounded p-0.5 gap-0.5">
+    <div className="flex bg-grim-800 rounded p-0.5 gap-0.5" role="tablist" aria-label="Workspace mode">
       {tabs.map(tab => {
         const isActive = activeMode === tab.mode;
         return (
           <button
             key={tab.mode}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls={`workspace-${tab.mode.toLowerCase()}`}
             onClick={() => onChange(tab.mode)}
             className={`
               flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded transition-all duration-200

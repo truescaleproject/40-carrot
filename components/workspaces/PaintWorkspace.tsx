@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { Palette, Upload, RotateCcw, ChevronDown, ChevronUp, Copy, Pipette } from 'lucide-react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
+import { Palette, Upload, Copy, Pipette } from 'lucide-react';
 import { PaintScheme, PaintRole, PAINT_ROLES } from '../../types/workspace';
-import { generateSchemes, hexToHsl, hslToHex, extractPaletteFromImageData, ColorScheme } from '../../utils/colorTheory';
+import { generateSchemes, extractPaletteFromImageData, ColorScheme } from '../../utils/colorTheory';
 import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/storageUtils';
+import { SectionHeader } from './SectionHeader';
 
 // Simple model silhouette SVG paths for paint preview
 const MODEL_REGIONS: Record<string, { path: string; label: string }> = {
@@ -27,7 +28,7 @@ export const PaintWorkspace: React.FC = () => {
     if (saved) {
       try { return JSON.parse(saved); } catch { /* fallback */ }
     }
-    return PAINT_ROLES.map((r, i) => ({
+    return PAINT_ROLES.map(r => ({
       id: genId(),
       role: r.value,
       color: '#808080',
@@ -42,8 +43,7 @@ export const PaintWorkspace: React.FC = () => {
     return [];
   });
   const [schemeName, setSchemeName] = useState('');
-  const [expandedSection, setExpandedSection] = useState<'generator' | 'wheel' | 'saved' | null>('generator');
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState<string | null>('generator');
   const [extractedPalette, setExtractedPalette] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -61,9 +61,8 @@ export const PaintWorkspace: React.FC = () => {
           updated[i] = { ...updated[i], color };
         }
       });
-      const result = updated;
-      safeLocalStorageSet('paintRoles', JSON.stringify(result));
-      return result;
+      safeLocalStorageSet('paintRoles', JSON.stringify(updated));
+      return updated;
     });
   }, []);
 
@@ -76,18 +75,20 @@ export const PaintWorkspace: React.FC = () => {
   }, []);
 
   const saveScheme = useCallback(() => {
-    const scheme: PaintScheme = {
-      id: genId(),
-      name: schemeName || `Scheme ${savedSchemes.length + 1}`,
-      baseColor,
-      colors: [...paintRoles],
-      createdAt: Date.now(),
-    };
-    const updated = [...savedSchemes, scheme];
-    setSavedSchemes(updated);
-    safeLocalStorageSet('savedPaintSchemes', JSON.stringify(updated));
+    setSavedSchemes(prev => {
+      const scheme: PaintScheme = {
+        id: genId(),
+        name: schemeName || `Scheme ${prev.length + 1}`,
+        baseColor,
+        colors: [...paintRoles],
+        createdAt: Date.now(),
+      };
+      const updated = [...prev, scheme];
+      safeLocalStorageSet('savedPaintSchemes', JSON.stringify(updated));
+      return updated;
+    });
     setSchemeName('');
-  }, [schemeName, savedSchemes, baseColor, paintRoles]);
+  }, [schemeName, baseColor, paintRoles]);
 
   const loadScheme = useCallback((scheme: PaintScheme) => {
     setBaseColor(scheme.baseColor);
@@ -97,10 +98,12 @@ export const PaintWorkspace: React.FC = () => {
   }, []);
 
   const deleteScheme = useCallback((id: string) => {
-    const updated = savedSchemes.filter(s => s.id !== id);
-    setSavedSchemes(updated);
-    safeLocalStorageSet('savedPaintSchemes', JSON.stringify(updated));
-  }, [savedSchemes]);
+    setSavedSchemes(prev => {
+      const updated = prev.filter(s => s.id !== id);
+      safeLocalStorageSet('savedPaintSchemes', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,9 +111,7 @@ export const PaintWorkspace: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const result = ev.target?.result as string;
-      setUploadedImage(result);
 
-      // Extract palette from image
       const img = new Image();
       img.onload = () => {
         const canvas = canvasRef.current;
@@ -142,34 +143,29 @@ export const PaintWorkspace: React.FC = () => {
       safeLocalStorageSet('paintRoles', JSON.stringify(updated));
       return updated;
     });
-    if (extractedPalette.length > 0) {
-      updateBaseColor(extractedPalette[0]);
-    }
+    updateBaseColor(extractedPalette[0]);
   }, [extractedPalette, updateBaseColor]);
 
-  const copyHex = (hex: string) => {
+  const copyHex = useCallback((hex: string) => {
     navigator.clipboard?.writeText(hex);
-  };
+  }, []);
 
-  const SectionHeader = ({ title, section, icon: Icon }: { title: string; section: 'generator' | 'wheel' | 'saved'; icon: React.ElementType }) => (
-    <button
-      onClick={() => setExpandedSection(expandedSection === section ? null : section)}
-      className="w-full flex items-center justify-between py-2 text-xs font-bold text-slate-400 uppercase tracking-wider hover:text-grim-gold transition-colors"
-    >
-      <span className="flex items-center gap-1.5"><Icon size={12} />{title}</span>
-      {expandedSection === section ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-    </button>
-  );
+  const handleToggleSection = useCallback((section: string) => {
+    setExpandedSection(section || null);
+  }, []);
 
-  const roleColorMap: Record<string, string> = {};
-  paintRoles.forEach(r => { roleColorMap[r.role] = r.color; });
+  const roleColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    paintRoles.forEach(r => { map[r.role] = r.color; });
+    return map;
+  }, [paintRoles]);
 
   return (
     <div className="space-y-3">
       {/* Color Scheme Generator */}
-      <SectionHeader title="Color Scheme Generator" section="generator" icon={Palette} />
+      <SectionHeader title="Color Scheme Generator" section="generator" expandedSection={expandedSection} onToggle={handleToggleSection} icon={Palette} />
       {expandedSection === 'generator' && (
-        <div className="space-y-3 animate-in slide-in-from-top-1 duration-200">
+        <div id="section-generator" className="space-y-3 animate-in slide-in-from-top-1 duration-200">
           <div className="flex items-center gap-2">
             <label className="text-[10px] text-slate-500 uppercase font-bold">Base Color</label>
             <input
@@ -177,6 +173,7 @@ export const PaintWorkspace: React.FC = () => {
               value={baseColor}
               onChange={(e) => updateBaseColor(e.target.value)}
               className="w-8 h-8 rounded cursor-pointer border border-grim-700 bg-transparent"
+              aria-label="Base color picker"
             />
             <span className="text-[10px] font-mono text-slate-400">{baseColor}</span>
           </div>
@@ -191,16 +188,18 @@ export const PaintWorkspace: React.FC = () => {
                     ? 'border-grim-gold/50 bg-grim-800'
                     : 'border-grim-700/50 hover:border-grim-600'
                 }`}
+                aria-label={`Apply ${scheme.name} color scheme`}
               >
                 <div className="text-[10px] font-bold text-slate-300 mb-1">{scheme.name}</div>
                 <div className="text-[9px] text-slate-500 mb-1.5">{scheme.description}</div>
                 <div className="flex gap-1">
                   {scheme.colors.map((color, i) => (
-                    <div
+                    <button
                       key={i}
                       className="h-6 flex-1 rounded-sm border border-black/30 cursor-pointer hover:scale-110 transition-transform"
                       style={{ backgroundColor: color }}
-                      title={color}
+                      title={`Copy ${color}`}
+                      aria-label={`Copy color ${color}`}
                       onClick={(e) => { e.stopPropagation(); copyHex(color); }}
                     />
                   ))}
@@ -225,11 +224,12 @@ export const PaintWorkspace: React.FC = () => {
               <div className="mt-2 space-y-1.5">
                 <div className="flex gap-1">
                   {extractedPalette.map((color, i) => (
-                    <div
+                    <button
                       key={i}
                       className="h-8 flex-1 rounded-sm border border-black/30 cursor-pointer hover:scale-110 transition-transform"
                       style={{ backgroundColor: color }}
-                      title={color}
+                      title={`Copy ${color}`}
+                      aria-label={`Copy color ${color}`}
                       onClick={() => copyHex(color)}
                     />
                   ))}
@@ -247,14 +247,13 @@ export const PaintWorkspace: React.FC = () => {
       )}
 
       {/* Miniature Color Wheel */}
-      <SectionHeader title="Miniature Color Wheel" section="wheel" icon={Pipette} />
+      <SectionHeader title="Miniature Color Wheel" section="wheel" expandedSection={expandedSection} onToggle={handleToggleSection} icon={Pipette} />
       {expandedSection === 'wheel' && (
-        <div className="space-y-3 animate-in slide-in-from-top-1 duration-200">
+        <div id="section-wheel" className="space-y-3 animate-in slide-in-from-top-1 duration-200">
           {/* Model Silhouette Preview */}
           <div className="relative bg-grim-800 rounded-lg border border-grim-700 p-2">
             <div className="text-[9px] text-slate-500 uppercase font-bold mb-1 text-center">Preview</div>
-            <svg viewBox="0 95 80 100" className="w-full h-32">
-              {/* Background silhouette */}
+            <svg viewBox="0 0 80 100" className="w-full h-32" role="img" aria-label="Model paint preview">
               <rect x="0" y="0" width="80" height="100" fill="transparent" />
               {Object.entries(MODEL_REGIONS).map(([role, { path }]) => (
                 <path
@@ -278,9 +277,16 @@ export const PaintWorkspace: React.FC = () => {
                   value={role.color}
                   onChange={(e) => updateRoleColor(role.id, e.target.value)}
                   className="w-6 h-6 rounded cursor-pointer border border-grim-700 bg-transparent shrink-0"
+                  aria-label={`${role.label} color`}
                 />
                 <span className="text-[10px] text-slate-300 flex-1">{role.label}</span>
-                <span className="text-[9px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onClick={() => copyHex(role.color)}>{role.color}</span>
+                <button
+                  className="text-[9px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity bg-transparent border-none cursor-pointer"
+                  onClick={() => copyHex(role.color)}
+                  aria-label={`Copy ${role.label} color ${role.color}`}
+                >
+                  {role.color}
+                </button>
               </div>
             ))}
           </div>
@@ -293,6 +299,7 @@ export const PaintWorkspace: React.FC = () => {
               onChange={(e) => setSchemeName(e.target.value)}
               placeholder="Scheme name..."
               className="flex-1 bg-grim-800 border border-grim-700 rounded px-2 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-grim-gold/50"
+              aria-label="Paint scheme name"
             />
             <button
               onClick={saveScheme}
@@ -305,9 +312,9 @@ export const PaintWorkspace: React.FC = () => {
       )}
 
       {/* Saved Schemes */}
-      <SectionHeader title="Saved Schemes" section="saved" icon={Copy} />
+      <SectionHeader title="Saved Schemes" section="saved" expandedSection={expandedSection} onToggle={handleToggleSection} icon={Copy} />
       {expandedSection === 'saved' && (
-        <div className="space-y-1.5 animate-in slide-in-from-top-1 duration-200">
+        <div id="section-saved" className="space-y-1.5 animate-in slide-in-from-top-1 duration-200">
           {savedSchemes.length === 0 ? (
             <div className="text-[10px] text-slate-600 text-center py-4 italic">No saved schemes yet</div>
           ) : (
@@ -319,8 +326,8 @@ export const PaintWorkspace: React.FC = () => {
                   ))}
                 </div>
                 <span className="text-[10px] text-slate-300 flex-1 truncate">{scheme.name}</span>
-                <button onClick={() => loadScheme(scheme)} className="text-[9px] text-grim-gold opacity-0 group-hover:opacity-100 transition-opacity hover:underline">Load</button>
-                <button onClick={() => deleteScheme(scheme.id)} className="text-[9px] text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:underline">Del</button>
+                <button onClick={() => loadScheme(scheme)} className="text-[9px] text-grim-gold opacity-0 group-hover:opacity-100 transition-opacity hover:underline" aria-label={`Load ${scheme.name}`}>Load</button>
+                <button onClick={() => deleteScheme(scheme.id)} className="text-[9px] text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:underline" aria-label={`Delete ${scheme.name}`}>Del</button>
               </div>
             ))
           )}

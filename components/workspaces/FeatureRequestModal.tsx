@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { safeLocalStorageGet, safeLocalStorageSet } from '../../utils/storageUtils';
 
 interface FeatureRequestModalProps {
   isOpen: boolean;
@@ -20,14 +21,61 @@ interface FeatureRequestPayload {
   pageContext: string;
 }
 
+type SubmitStatus = 'idle' | 'submitting' | 'success' | 'savedLocally' | 'error';
+
 export const FeatureRequestModal: React.FC<FeatureRequestModalProps> = ({ isOpen, onClose }) => {
   const [description, setDescription] = useState('');
   const [problemSolved, setProblemSolved] = useState('');
   const [email, setEmail] = useState('');
   const [screenshot, setScreenshot] = useState<string | null>(null);
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<SubmitStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Escape key handler
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
+  // Focus trap - focus modal on open
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      const firstInput = modalRef.current.querySelector<HTMLElement>('textarea, input, button');
+      firstInput?.focus();
+    }
+  }, [isOpen]);
+
+  const resetForm = useCallback(() => {
+    setDescription('');
+    setProblemSolved('');
+    setEmail('');
+    setScreenshot(null);
+    setStatus('idle');
+  }, []);
+
+  const resetAndClose = useCallback((delay = 2000) => {
+    setTimeout(() => {
+      resetForm();
+      onClose();
+    }, delay);
+  }, [resetForm, onClose]);
+
+  const storeLocally = useCallback((payload: FeatureRequestPayload) => {
+    try {
+      const raw = safeLocalStorageGet('pendingFeatureRequests');
+      const existing = raw ? JSON.parse(raw) : [];
+      existing.push(payload);
+      safeLocalStorageSet('pendingFeatureRequests', JSON.stringify(existing));
+    } catch {
+      // Storage full or unavailable
+    }
+  }, []);
 
   if (!isOpen) return null;
 
@@ -64,7 +112,6 @@ export const FeatureRequestModal: React.FC<FeatureRequestModalProps> = ({ isOpen
     };
 
     try {
-      // Try the serverless function endpoint first
       const response = await fetch(NOTION_API_PROXY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,78 +120,61 @@ export const FeatureRequestModal: React.FC<FeatureRequestModalProps> = ({ isOpen
 
       if (response.ok) {
         setStatus('success');
-        // Clear form after success
-        setTimeout(() => {
-          setDescription('');
-          setProblemSolved('');
-          setEmail('');
-          setScreenshot(null);
-          setStatus('idle');
-          onClose();
-        }, 2000);
+        resetAndClose();
       } else {
-        // If server endpoint not available, store locally as fallback
         storeLocally(payload);
-        setStatus('success');
-        setTimeout(() => {
-          setDescription('');
-          setProblemSolved('');
-          setEmail('');
-          setScreenshot(null);
-          setStatus('idle');
-          onClose();
-        }, 2000);
+        setStatus('savedLocally');
+        resetAndClose();
       }
     } catch {
-      // Network error - store locally
       storeLocally(payload);
-      setStatus('success');
-      setTimeout(() => {
-        setDescription('');
-        setProblemSolved('');
-        setEmail('');
-        setScreenshot(null);
-        setStatus('idle');
-        onClose();
-      }, 2000);
-    }
-  };
-
-  const storeLocally = (payload: FeatureRequestPayload) => {
-    try {
-      const existing = JSON.parse(localStorage.getItem('pendingFeatureRequests') || '[]');
-      existing.push(payload);
-      localStorage.setItem('pendingFeatureRequests', JSON.stringify(existing));
-    } catch {
-      // Storage full or unavailable
+      setStatus('savedLocally');
+      resetAndClose();
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-grim-900 border border-grim-700 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="feature-request-title"
+    >
+      <div
+        ref={modalRef}
+        className="bg-grim-900 border border-grim-700 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-grim-800">
-          <h2 className="text-sm font-bold text-grim-gold uppercase tracking-wider">Suggest a Feature</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors"><X size={18} /></button>
+          <h2 id="feature-request-title" className="text-sm font-bold text-grim-gold uppercase tracking-wider">Suggest a Feature</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors" aria-label="Close dialog"><X size={18} /></button>
         </div>
 
         {/* Body */}
         <div className="p-5 space-y-4">
-          {status === 'success' ? (
+          {(status === 'success' || status === 'savedLocally') ? (
             <div className="flex flex-col items-center justify-center py-8 gap-3">
-              <CheckCircle size={48} className="text-green-400" />
-              <p className="text-sm text-green-400 font-bold">Thank you for your feedback!</p>
-              <p className="text-[10px] text-slate-500">Your suggestion has been submitted.</p>
+              <CheckCircle size={48} className={status === 'success' ? 'text-green-400' : 'text-amber-400'} />
+              <p className={`text-sm font-bold ${status === 'success' ? 'text-green-400' : 'text-amber-400'}`}>
+                {status === 'success' ? 'Thank you for your feedback!' : 'Saved for later submission'}
+              </p>
+              <p className="text-[10px] text-slate-500">
+                {status === 'success'
+                  ? 'Your suggestion has been submitted.'
+                  : 'Your suggestion was saved locally and will be submitted when the server is available.'}
+              </p>
             </div>
           ) : (
             <>
               {/* Required: Feature Idea */}
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                <label htmlFor="feature-desc" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   Feature Idea <span className="text-red-400">*</span>
                 </label>
                 <textarea
+                  id="feature-desc"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe your feature idea..."
@@ -155,10 +185,11 @@ export const FeatureRequestModal: React.FC<FeatureRequestModalProps> = ({ isOpen
 
               {/* Optional: Problem it Solves */}
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                <label htmlFor="feature-problem" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   What problem does this solve? <span className="text-slate-600">(optional)</span>
                 </label>
                 <textarea
+                  id="feature-problem"
                   value={problemSolved}
                   onChange={(e) => setProblemSolved(e.target.value)}
                   placeholder="Explain the problem or use case..."
@@ -169,10 +200,11 @@ export const FeatureRequestModal: React.FC<FeatureRequestModalProps> = ({ isOpen
 
               {/* Optional: Email */}
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                <label htmlFor="feature-email" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   Email for follow-up <span className="text-slate-600">(optional)</span>
                 </label>
                 <input
+                  id="feature-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -189,8 +221,8 @@ export const FeatureRequestModal: React.FC<FeatureRequestModalProps> = ({ isOpen
                 </label>
                 {screenshot ? (
                   <div className="relative group">
-                    <img src={screenshot} alt="Screenshot" className="w-full h-24 object-cover rounded-lg border border-grim-700" />
-                    <button onClick={() => setScreenshot(null)} className="absolute top-1 right-1 bg-grim-900/80 p-1 rounded-full text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><X size={14} /></button>
+                    <img src={screenshot} alt="Screenshot preview" className="w-full h-24 object-cover rounded-lg border border-grim-700" />
+                    <button onClick={() => setScreenshot(null)} className="absolute top-1 right-1 bg-grim-900/80 p-1 rounded-full text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Remove screenshot"><X size={14} /></button>
                   </div>
                 ) : (
                   <button
@@ -206,7 +238,7 @@ export const FeatureRequestModal: React.FC<FeatureRequestModalProps> = ({ isOpen
 
               {/* Error */}
               {errorMessage && (
-                <div className="flex items-center gap-1.5 text-red-400 text-xs">
+                <div className="flex items-center gap-1.5 text-red-400 text-xs" role="alert">
                   <AlertCircle size={14} /> {errorMessage}
                 </div>
               )}

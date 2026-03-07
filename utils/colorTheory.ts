@@ -2,6 +2,7 @@
 // Color theory utilities for the Paint workspace
 
 export function hexToHsl(hex: string): [number, number, number] {
+  if (!hex || !/^#[0-9a-fA-F]{6}$/.test(hex)) return [0, 0, 0];
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
   const b = parseInt(hex.slice(5, 7), 16) / 255;
