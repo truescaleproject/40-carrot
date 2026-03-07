@@ -14,7 +14,7 @@ interface ToolbarProps {
   canRedo: boolean;
   sidebarOpen: boolean;
   toggleSidebar: () => void;
-  auraRadius: number | null;
+  auraRadius: number | 'MOVE_SHOOT' | null;
   cycleAuraRadius: () => void;
   clearLines: () => void;
   clearDeploymentZones: () => void;
@@ -246,18 +246,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
                     <button
                         onClick={cycleAuraRadius}
-                        aria-label={`Toggle Auras: ${auraRadius ? auraRadius + ' inches' : 'Off'} (R)`}
-                        className={`relative group p-2 rounded-full transition-colors flex items-center justify-center ${auraRadius !== null ? 'text-teal-400 bg-grim-800 shadow-[0_0_10px_rgba(45,212,191,0.2)]' : 'text-text-muted hover:text-text-primary hover:bg-grim-800'}`}
+                        aria-label={`Toggle Auras: ${auraRadius === 'MOVE_SHOOT' ? 'Move+Shoot' : (auraRadius ? auraRadius + ' inches' : 'Off')} (R)`}
+                        className={`relative group p-2 rounded-full transition-colors flex items-center justify-center ${auraRadius !== null ? (auraRadius === 'MOVE_SHOOT' ? 'text-orange-400 bg-grim-800 shadow-[0_0_10px_rgba(249,115,22,0.2)]' : 'text-teal-400 bg-grim-800 shadow-[0_0_10px_rgba(45,212,191,0.2)]') : 'text-text-muted hover:text-text-primary hover:bg-grim-800'}`}
                     >
                         {auraRadius !== null ? (
                             <div className="relative w-5 h-5 flex items-center justify-center">
                                 <CircleDashed size={18} className="opacity-50" />
-                                <span className="absolute text-[9px] font-bold font-mono">{auraRadius}</span>
+                                <span className="absolute text-[9px] font-bold font-mono">{auraRadius === 'MOVE_SHOOT' ? 'M+S' : auraRadius}</span>
                             </div>
                         ) : (
                             <CircleDashed size={18} />
                         )}
-                        <Tooltip text={`Toggle Auras: ${auraRadius ? auraRadius + '"' : 'Off'}`} shortcut="R" />
+                        <Tooltip text={`Toggle Auras: ${auraRadius === 'MOVE_SHOOT' ? 'Move+Shoot' : (auraRadius ? auraRadius + '"' : 'Off')}`} shortcut="R" />
                     </button>
                 </div>
             </div>

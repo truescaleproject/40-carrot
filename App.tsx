@@ -67,7 +67,7 @@ export const App = () => {
   const [boardCount, setBoardCount] = useState(1);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [activeColor, setActiveColor] = useState(COLORS[0]);
-  const [auraRadius, setAuraRadius] = useState<number | null>(null);
+  const [auraRadius, setAuraRadius] = useState<number | 'MOVE_SHOOT' | null>(null);
   const [focusedBoardIndex, setFocusedBoardIndex] = useState(0);
   
   const [creationType, setCreationType] = useState<ElementType>(ElementType.MODEL);
@@ -500,6 +500,18 @@ export const App = () => {
           const max = parseInt(el.stats?.w || '1') || 1;
           const current = el.currentWounds ?? max;
           return { ...el, currentWounds: Math.max(0, Math.min(max, current + delta)) };
+      }));
+  }, []);
+
+  const handleModelRightClick = useCallback((id: string) => {
+      setElements(prev => prev.map(el => {
+          if (el.id !== id) return el;
+          const max = parseInt(el.stats?.w || '1') || 1;
+          const current = el.currentWounds ?? max;
+          if (current <= 0) {
+              return { ...el, currentWounds: max };
+          }
+          return { ...el, currentWounds: current - 1 };
       }));
   }, []);
 
@@ -1064,7 +1076,7 @@ export const App = () => {
   }, [selectedIds, elements, saveHistory]);
 
   const cycleAuraRadius = useCallback(() => {
-      setAuraRadius(prev => prev === null ? 3 : (prev === 3 ? 6 : (prev === 6 ? 9 : (prev === 9 ? 12 : null))));
+      setAuraRadius(prev => prev === null ? 3 : (prev === 3 ? 6 : (prev === 6 ? 9 : (prev === 9 ? 12 : (prev === 12 ? 'MOVE_SHOOT' : null)))));
   }, []);
 
   const toggleEdgeMeasurements = useCallback(() => setShowEdgeMeasurements(prev => !prev), []);
@@ -1331,6 +1343,7 @@ export const App = () => {
                     boardWidth={boardWidth} boardHeight={boardHeight} boardCount={boardCount}
                     onActionStart={() => {}}
                     onRightClick={() => {}}
+                    onModelRightClick={handleModelRightClick}
                     undo={onUndo} redo={onRedo}
                     canUndo={history.length > 0} canRedo={redoStack.length > 0}
                     labelFontSize={settings.labelFontSize}
@@ -1445,6 +1458,7 @@ export const App = () => {
                                     onActionStart={() => saveHistory({ elements, lines, zones })}
                                     sidebarHoveredId={sidebarHoveredId}
                                     onRightClick={() => setSelectedIds([])}
+                                    onModelRightClick={handleModelRightClick}
                                     labelFontSize={settings.labelFontSize}
                                     sidebarOpen={sidebarOpen}
                                     auraRadius={auraRadius}
@@ -1478,7 +1492,7 @@ export const App = () => {
                             onBackupData={handleExportState} onRestoreData={handleImportState}
                             isObjectivesLocked={isObjectivesLocked}
                             toggleObjectiveLock={() => setIsObjectivesLocked(!isObjectivesLocked)}
-                            onOpenDataCards={() => setShowDataCards(true)}
+                            onOpenDataCards={() => { setShowDataCards(true); setSelectedIds([]); }}
                         />
                         {settings.showQuickMenu && !sidebarOpen && activeBottomPanel === 'NONE' && (
                             <QuickMenu onAdd={(type) => addElement(type, 'QUICK_MENU')} />

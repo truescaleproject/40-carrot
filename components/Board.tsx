@@ -29,9 +29,10 @@ interface BoardProps {
   onActionStart: () => void;
   sidebarHoveredId: string | null;
   onRightClick: () => void;
+  onModelRightClick?: (id: string) => void;
   labelFontSize: number;
   sidebarOpen: boolean;
-  auraRadius: number | null;
+  auraRadius: number | 'MOVE_SHOOT' | null;
   objectivesUnlocked: boolean;
   isTerrainLocked: boolean;
   showEdgeMeasurements?: boolean;
@@ -217,7 +218,7 @@ const BoardElementItem = React.memo(({
 export const Board = forwardRef<BoardRef, BoardProps>(({
   elements, setElements, lines, setLines, zones = [], mode, selectedIds, setSelectedIds,
   backgroundImage, activeColor, pixelsPerInch, boardWidth, boardHeight, onActionStart,
-  sidebarHoveredId, onRightClick, labelFontSize, sidebarOpen, auraRadius, objectivesUnlocked,
+  sidebarHoveredId, onRightClick, onModelRightClick, labelFontSize, sidebarOpen, auraRadius, objectivesUnlocked,
   isTerrainLocked, showEdgeMeasurements, boardCount = 1,
   showCoherencyAlerts, isTerrainVisible, areZonesVisible, onGroupRotationStart, onGroupRotate, onGroupRotationEnd, onFocusedBoardChange,
   displayMode = 'desktop', isSpacePressed = false, isTabPressed = false, onInteraction, onHover
@@ -1000,7 +1001,18 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
             <svg className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-visible z-0">
             {areZonesVisible && zones.map(zone => <polygon key={zone.id} points={zone.points.map(p => `${p.x - BOARD_OFFSET},${p.y - BOARD_OFFSET}`).join(' ')} fill={zone.color} stroke={zone.color.replace('0.3)', '0.8)')} strokeWidth={2 * lineScale} className="pointer-events-none" />)}
             {elements.map(el => el.type === ElementType.OBJECTIVE && <circle key={`obj-aura-${el.id}`} cx={el.x + el.width/2 - BOARD_OFFSET} cy={el.y + el.height/2 - BOARD_OFFSET} r={el.width/2 + (3 * pixelsPerInch)} fill="rgba(34, 197, 94, 0.1)" stroke="rgba(34, 197, 94, 0.5)" strokeWidth={2 * lineScale} strokeDasharray="5,5" className="pointer-events-none opacity-50" />)}
-            {auraRadius !== null && selectedElements.map(el => el.type === ElementType.MODEL && el.currentWounds !== 0 && <circle key={`aura-${el.id}`} cx={el.x - BOARD_OFFSET + el.width/2} cy={el.y - BOARD_OFFSET + el.height/2} r={Math.max(el.width, el.height)/2 + (auraRadius * pixelsPerInch)} fill="none" stroke="#2dd4bf" strokeWidth={2 * lineScale} strokeDasharray="8 4" className="pointer-events-none opacity-80" />)}
+            {auraRadius !== null && selectedElements.map(el => {
+                if (el.type !== ElementType.MODEL || el.currentWounds === 0) return null;
+                let radius: number;
+                if (auraRadius === 'MOVE_SHOOT') {
+                    const move = parseFloat((el.stats?.m || '0').replace(/[^0-9.]/g, '')) || 0;
+                    const maxRange = Math.max(0, ...(el.stats?.weapons || []).filter(w => w.type === 'RANGED').map(w => parseFloat((w.range || '0').replace(/[^0-9.]/g, '')) || 0));
+                    radius = Math.max(el.width, el.height) / 2 + ((move + maxRange) * pixelsPerInch);
+                } else {
+                    radius = Math.max(el.width, el.height) / 2 + (auraRadius * pixelsPerInch);
+                }
+                return <circle key={`aura-${el.id}`} cx={el.x - BOARD_OFFSET + el.width/2} cy={el.y - BOARD_OFFSET + el.height/2} r={radius} fill="none" stroke={auraRadius === 'MOVE_SHOOT' ? '#f97316' : '#2dd4bf'} strokeWidth={2 * lineScale} strokeDasharray="8 4" className="pointer-events-none opacity-80" />;
+            })}
             </svg>
             {elementsSortedByLayer.map(element => {
                 const buffer = 500, viewMinX = (0 - pan.x) / scale - buffer, viewMinY = (0 - pan.y) / scale - buffer, viewMaxX = (window.innerWidth - pan.x) / scale + buffer, viewMaxY = (window.innerHeight - pan.y) / scale + buffer;
@@ -1030,7 +1042,7 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
                             isSidebarHovered={sidebarHoveredId === element.id} isIntersected={intersectedIds.includes(element.id)} 
                             isCoherencyBroken={showCoherencyAlerts && element.type === ElementType.MODEL && element.currentWounds !== 0 && outOfCoherencyIds.has(element.id)} 
                             mode={mode} isTerrainLocked={isTerrainLocked} objectivesUnlocked={objectivesUnlocked} labelFontSize={labelFontSize} 
-                            onContextMenu={(e: any, id: string) => { e.preventDefault(); if (selectedIdSet.has(id) && selectedIdSet.size > 1) { e.stopPropagation(); setSelectedIds([id]); } }} 
+                            onContextMenu={(e: any, id: string) => { e.preventDefault(); e.stopPropagation(); const el = elements.find(el => el.id === id); if (el && el.type === ElementType.MODEL && onModelRightClick) { onModelRightClick(id); } else if (selectedIdSet.has(id) && selectedIdSet.size > 1) { setSelectedIds([id]); } }} 
                             handleRotationStart={handleRotationStart} handleResizeStart={handleResizeStart} setHoveredElement={handleSetHoveredElement} 
                             lineScale={lineScale} isMultiSelection={selectedIdSet.size > 1}
                             isEditing={isEditing} onTextChange={handleTextChange} onTextBlur={handleTextBlur}

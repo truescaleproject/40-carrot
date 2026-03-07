@@ -26,13 +26,14 @@ export interface MobileLayoutProps {
   
   onActionStart: () => void;
   onRightClick: () => void;
+  onModelRightClick?: (id: string) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
   
   labelFontSize: number;
-  auraRadius: number | null;
+  auraRadius: number | 'MOVE_SHOOT' | null;
   objectivesUnlocked: boolean;
   isTerrainLocked: boolean;
   showEdgeMeasurements: boolean;
@@ -81,6 +82,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = (props) => {
                 onActionStart={props.onActionStart}
                 sidebarHoveredId={null}
                 onRightClick={props.onRightClick}
+                onModelRightClick={props.onModelRightClick}
                 labelFontSize={props.labelFontSize}
                 sidebarOpen={false} // Always closed on mobile layout
                 auraRadius={props.auraRadius}
