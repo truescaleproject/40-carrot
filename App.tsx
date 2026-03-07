@@ -59,7 +59,11 @@ export const App = () => {
   
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = safeLocalStorageGet('appSettings');
-    return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+    if (saved) {
+      try { return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) }; }
+      catch { /* corrupted settings, use defaults */ }
+    }
+    return DEFAULT_SETTINGS;
   });
 
   const [boardWidth, setBoardWidth] = useState(DEFAULT_BOARD_WIDTH);
@@ -504,6 +508,7 @@ export const App = () => {
   }, []);
 
   const handleModelRightClick = useCallback((id: string) => {
+      saveHistory({ elements, lines, zones });
       setElements(prev => prev.map(el => {
           if (el.id !== id) return el;
           const max = parseInt(el.stats?.w || '1') || 1;
@@ -513,7 +518,7 @@ export const App = () => {
           }
           return { ...el, currentWounds: current - 1 };
       }));
-  }, []);
+  }, [saveHistory, elements, lines, zones]);
 
   const addWeapon = useCallback(() => {
       saveHistory({ elements, lines, zones });

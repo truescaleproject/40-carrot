@@ -1005,8 +1005,8 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
                 if (el.type !== ElementType.MODEL || el.currentWounds === 0) return null;
                 let radius: number;
                 if (auraRadius === 'MOVE_SHOOT') {
-                    const move = parseFloat((el.stats?.m || '0').replace(/[^0-9.]/g, '')) || 0;
-                    const maxRange = Math.max(0, ...(el.stats?.weapons || []).filter(w => w.type === 'RANGED').map(w => parseFloat((w.range || '0').replace(/[^0-9.]/g, '')) || 0));
+                    const move = parseFloat((el.stats?.m || '0').match(/[\d.]+/)?.[0] || '0') || 0;
+                    const maxRange = Math.max(0, ...(el.stats?.weapons || []).filter(w => w.type === 'RANGED').map(w => parseFloat((w.range || '0').match(/[\d.]+/)?.[0] || '0') || 0));
                     radius = Math.max(el.width, el.height) / 2 + ((move + maxRange) * pixelsPerInch);
                 } else {
                     radius = Math.max(el.width, el.height) / 2 + (auraRadius * pixelsPerInch);
