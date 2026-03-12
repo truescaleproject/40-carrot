@@ -8,7 +8,7 @@ services:
       # Set your Elegoo Centauri printer's IP address below.
       # Find it on the printer: Gear icon > Network tab > IP listed under connected network.
       # https://octoeverywhere.com/s/elegoo-ip
-      - PRINTER_IP=XXX.XXX.XXX.XXX
+      - PRINTER_IP=192.168.4.110
     volumes:
       # Persistent data storage for the plugin.
       - ./data:/data
