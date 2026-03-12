@@ -1,0 +1,14 @@
+version: '2'
+services:
+  octoeverywhere-elegoo-connect:
+    image: octoeverywhere/octoeverywhere:latest
+    environment:
+      # Required to set the docker container in Elegoo Connect mode.
+      - COMPANION_MODE=elegoo
+      # Set your Elegoo Centauri printer's IP address below.
+      # Find it on the printer: Gear icon > Network tab > IP listed under connected network.
+      # https://octoeverywhere.com/s/elegoo-ip
+      - PRINTER_IP=XXX.XXX.XXX.XXX
+    volumes:
+      # Persistent data storage for the plugin.
+      - ./data:/data
