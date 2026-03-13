@@ -153,8 +153,8 @@ export const App = () => {
       const isSingleGroup = validTargets.length > 0 && new Set(validTargets.map(e => e.groupId)).size === 1 && !!validTargets[0].groupId;
       
       if (validTargets.length > 0) {
-          if (isSingleGroup) squadName = validTargets[0].groupLabel || "Squad";
-          else if (validTargets.length === 1) squadName = validTargets[0].label;
+          if (validTargets.length === 1) squadName = validTargets[0].label;
+          else if (isSingleGroup) squadName = validTargets[0].groupLabel || "Squad";
           else squadName = "Multiple Units";
       }
 
