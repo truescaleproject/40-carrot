@@ -792,7 +792,13 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
         else { 
             let idsToToggle: string[];
             if (isMultiSelect && selectedIds.includes(clickedElement.id)) {
-                idsToToggle = [clickedElement.id];
+                // If multiple groups are selected and clicking a grouped model, deselect the whole group
+                const selectedGroupIds = new Set(selectedIds.map(id => elementMap.get(id)?.groupId).filter(Boolean));
+                if (clickedElement.groupId && selectedGroupIds.size > 1) {
+                    idsToToggle = elements.filter(el => el.groupId === clickedElement.groupId).map(el => el.id);
+                } else {
+                    idsToToggle = [clickedElement.id];
+                }
             } else {
                 idsToToggle = clickedElement.groupId ? elements.filter(el => el.groupId === clickedElement.groupId).map(el => el.id) : [clickedElement.id];
             }
