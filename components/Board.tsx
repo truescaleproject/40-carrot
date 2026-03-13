@@ -1065,7 +1065,7 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
                 const cy = el.y - BOARD_OFFSET + el.height / 2;
                 const baseRadius = Math.max(el.width, el.height) / 2;
                 const moveRadius = baseRadius + (moveInches * pixelsPerInch);
-                const chargeRadius = baseRadius + ((moveInches + 7) * pixelsPerInch);
+                const chargeRadius = baseRadius + ((moveInches + 12) * pixelsPerInch);
                 return (
                     <React.Fragment key={`threat-${el.id}`}>
                         {threatRange >= 2 && <circle cx={cx} cy={cy} r={chargeRadius} fill="rgba(251, 191, 36, 0.08)" stroke="rgba(251, 191, 36, 0.6)" strokeWidth={2 * lineScale} strokeDasharray="6 3" className="pointer-events-none" />}
