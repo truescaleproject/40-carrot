@@ -1171,13 +1171,13 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
             {lines.map(line => {
                 const x1 = line.x1 - BOARD_OFFSET, y1 = line.y1 - BOARD_OFFSET, x2 = line.x2 - BOARD_OFFSET, y2 = line.y2 - BOARD_OFFSET, dist = Math.hypot(line.x2 - line.x1, line.y2 - line.y1);
                 const angle = Math.atan2(y2 - y1, x2 - x1);
-                const arrowheadSize = 40 * lineScale;
+                const arrowheadSize = 24 * lineScale;
                 return (
                 <g key={line.id}>
                     <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={line.color} strokeWidth={4 * lineScale} strokeLinecap="round" className="opacity-70" />
                     {line.isArrow && (
                         <polygon 
-                            points={`0,0 ${-arrowheadSize},-20 ${-arrowheadSize},20`} 
+                            points={`0,0 ${-arrowheadSize},-12 ${-arrowheadSize},12`} 
                             transform={`translate(${x2},${y2}) rotate(${angle * 180 / Math.PI})`} 
                             fill={line.color} 
                             className="opacity-70"
@@ -1189,13 +1189,13 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
             {currentLine && currentLine.x1 !== undefined && (() => {
                 const x1 = currentLine.x1 - BOARD_OFFSET, y1 = currentLine.y1 - BOARD_OFFSET, x2 = (currentLine.x2 || 0) - BOARD_OFFSET, y2 = (currentLine.y2 || 0) - BOARD_OFFSET;
                 const angle = Math.atan2(y2 - y1, x2 - x1);
-                const arrowheadSize = 40 * lineScale;
+                const arrowheadSize = 24 * lineScale;
                 return (
                     <g>
                         <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={currentLine.color} strokeWidth={mode === InteractionMode.MEASURE ? (2 * lineScale) : (4 * lineScale)} strokeDasharray={mode === InteractionMode.MEASURE ? "5,5" : "0"} className="opacity-80" />
                         {currentLine.isArrow && (
                             <polygon 
-                                points={`0,0 ${-arrowheadSize},-20 ${-arrowheadSize},20`} 
+                                points={`0,0 ${-arrowheadSize},-12 ${-arrowheadSize},12`} 
                                 transform={`translate(${x2},${y2}) rotate(${angle * 180 / Math.PI})`} 
                                 fill={currentLine.color} 
                                 className="opacity-80"
