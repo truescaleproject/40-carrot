@@ -117,7 +117,7 @@ const BoardElementItem = React.memo(({
 
     const maxWounds = element.stats ? parseInt(element.stats.w) : 1;
     const currentWounds = element.currentWounds ?? maxWounds;
-    const showWoundCounter = element.type === ElementType.MODEL && (maxWounds > 1 || currentWounds < maxWounds);
+    const showWoundCounter = element.type === ElementType.MODEL && element.stats;
     
     return (
         <div
@@ -181,7 +181,7 @@ const BoardElementItem = React.memo(({
 
             {showWoundCounter && !isSlain && (
                 <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none select-none">
-                    <span className="text-white/50 font-bold font-mono drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" style={{ fontSize: `${Math.min(element.width, element.height) * 0.5}px` }}>{currentWounds}</span>
+                    <span className="text-white font-bold font-mono drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" style={{ fontSize: `${Math.min(element.width, element.height) * 0.5}px` }}>{currentWounds}</span>
                 </div>
             )}
             {isSlain && (
