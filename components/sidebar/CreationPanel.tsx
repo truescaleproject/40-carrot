@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Flag, Link, Unlink, Activity, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import { ElementType, ModelStats, Weapon } from '../../types';
-import { COLORS } from '../../constants';
+import { COLORS, MM_PER_INCH } from '../../constants';
 import { StatsInputs, WeaponsList, ColorPicker } from './SidebarHelpers';
 
 interface CreationPanelProps {
@@ -129,10 +129,10 @@ export const CreationPanel: React.FC<CreationPanelProps> = ({
                                     min={creationType === ElementType.TERRAIN ? 0.5 : 10} 
                                     max={creationType === ElementType.TERRAIN ? 24 : 200}
                                     step={creationType === ElementType.TERRAIN ? 0.5 : 1}
-                                    value={creationType === ElementType.TERRAIN ? newElementWidth / pixelsPerInch : (newElementWidth / pixelsPerInch * 25.4)} 
+                                    value={creationType === ElementType.TERRAIN ? newElementWidth / pixelsPerInch : (newElementWidth / pixelsPerInch * MM_PER_INCH)} 
                                     onChange={e => {
                                         const val = Number(e.target.value);
-                                        const px = creationType === ElementType.TERRAIN ? val * pixelsPerInch : (val / 25.4 * pixelsPerInch);
+                                        const px = creationType === ElementType.TERRAIN ? val * pixelsPerInch : (val / MM_PER_INCH * pixelsPerInch);
                                         setNewElementWidth(px);
                                         if (isBaseSizeLinked) setNewElementHeight(px);
                                     }}
@@ -140,7 +140,7 @@ export const CreationPanel: React.FC<CreationPanelProps> = ({
                                 />
                                 <div className="w-10 text-right">
                                     <span className="text-[10px] font-mono text-text-primary">
-                                        {creationType === ElementType.TERRAIN ? (newElementWidth / pixelsPerInch).toFixed(1) : Math.round(newElementWidth / pixelsPerInch * 25.4)}
+                                        {creationType === ElementType.TERRAIN ? (newElementWidth / pixelsPerInch).toFixed(1) : Math.round(newElementWidth / pixelsPerInch * MM_PER_INCH)}
                                     </span>
                                 </div>
                             </div>
@@ -153,10 +153,10 @@ export const CreationPanel: React.FC<CreationPanelProps> = ({
                                     min={creationType === ElementType.TERRAIN ? 0.5 : 10} 
                                     max={creationType === ElementType.TERRAIN ? 24 : 200}
                                     step={creationType === ElementType.TERRAIN ? 0.5 : 1}
-                                    value={creationType === ElementType.TERRAIN ? newElementHeight / pixelsPerInch : (newElementHeight / pixelsPerInch * 25.4)} 
+                                    value={creationType === ElementType.TERRAIN ? newElementHeight / pixelsPerInch : (newElementHeight / pixelsPerInch * MM_PER_INCH)} 
                                     onChange={e => {
                                         const val = Number(e.target.value);
-                                        const px = creationType === ElementType.TERRAIN ? val * pixelsPerInch : (val / 25.4 * pixelsPerInch);
+                                        const px = creationType === ElementType.TERRAIN ? val * pixelsPerInch : (val / MM_PER_INCH * pixelsPerInch);
                                         setNewElementHeight(px);
                                         if (isBaseSizeLinked) setNewElementWidth(px);
                                     }}
@@ -164,7 +164,7 @@ export const CreationPanel: React.FC<CreationPanelProps> = ({
                                 />
                                 <div className="w-10 text-right">
                                     <span className="text-[10px] font-mono text-text-primary">
-                                        {creationType === ElementType.TERRAIN ? (newElementHeight / pixelsPerInch).toFixed(1) : Math.round(newElementHeight / pixelsPerInch * 25.4)}
+                                        {creationType === ElementType.TERRAIN ? (newElementHeight / pixelsPerInch).toFixed(1) : Math.round(newElementHeight / pixelsPerInch * MM_PER_INCH)}
                                     </span>
                                 </div>
                             </div>

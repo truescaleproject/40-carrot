@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, Minus, Plus, Image as ImageIcon, Trash2, Lock, Unlock, Flag, ChevronUp, ChevronDown, Move, Circle, Square } from 'lucide-react';
 import { BoardElement, ElementType, ModelStats, Weapon } from '../../types';
+import { MM_PER_INCH } from '../../constants';
 import { StatsInputs, WeaponsList, ColorPicker } from './SidebarHelpers';
 
 interface EditPanelSingleProps {
@@ -198,16 +199,16 @@ export const EditPanelSingle: React.FC<EditPanelSingleProps> = ({
                                     min={element.type === ElementType.TERRAIN ? 0.5 : 10} 
                                     max={element.type === ElementType.TERRAIN ? 24 : 160}
                                     step={element.type === ElementType.TERRAIN ? 0.5 : 1}
-                                    value={element.type === ElementType.TERRAIN ? element.width / pixelsPerInch : (element.width / pixelsPerInch * 25.4)} 
+                                    value={element.type === ElementType.TERRAIN ? element.width / pixelsPerInch : (element.width / pixelsPerInch * MM_PER_INCH)} 
                                     onChange={e => {
                                         const val = Number(e.target.value);
-                                        const px = element.type === ElementType.TERRAIN ? val * pixelsPerInch : (val / 25.4 * pixelsPerInch);
+                                        const px = element.type === ElementType.TERRAIN ? val * pixelsPerInch : (val / MM_PER_INCH * pixelsPerInch);
                                         updateSelectedDimensions('width', px);
                                     }}
                                     className="flex-1 h-1 bg-grim-600 rounded-lg appearance-none cursor-pointer"
                                 />
                                 <span className="text-[9px] w-8 text-right font-mono text-text-primary">
-                                    {element.type === ElementType.TERRAIN ? (element.width / pixelsPerInch).toFixed(1) : Math.round(element.width / pixelsPerInch * 25.4)}
+                                    {element.type === ElementType.TERRAIN ? (element.width / pixelsPerInch).toFixed(1) : Math.round(element.width / pixelsPerInch * MM_PER_INCH)}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2 mt-1">
@@ -217,16 +218,16 @@ export const EditPanelSingle: React.FC<EditPanelSingleProps> = ({
                                     min={element.type === ElementType.TERRAIN ? 0.5 : 10} 
                                     max={element.type === ElementType.TERRAIN ? 24 : 160}
                                     step={element.type === ElementType.TERRAIN ? 0.5 : 1}
-                                    value={element.type === ElementType.TERRAIN ? element.height / pixelsPerInch : (element.height / pixelsPerInch * 25.4)} 
+                                    value={element.type === ElementType.TERRAIN ? element.height / pixelsPerInch : (element.height / pixelsPerInch * MM_PER_INCH)} 
                                     onChange={e => {
                                         const val = Number(e.target.value);
-                                        const px = element.type === ElementType.TERRAIN ? val * pixelsPerInch : (val / 25.4 * pixelsPerInch);
+                                        const px = element.type === ElementType.TERRAIN ? val * pixelsPerInch : (val / MM_PER_INCH * pixelsPerInch);
                                         updateSelectedDimensions('height', px);
                                     }}
                                     className="flex-1 h-1 bg-grim-600 rounded-lg appearance-none cursor-pointer"
                                 />
                                 <span className="text-[9px] w-8 text-right font-mono text-text-primary">
-                                    {element.type === ElementType.TERRAIN ? (element.height / pixelsPerInch).toFixed(1) : Math.round(element.height / pixelsPerInch * 25.4)}
+                                    {element.type === ElementType.TERRAIN ? (element.height / pixelsPerInch).toFixed(1) : Math.round(element.height / pixelsPerInch * MM_PER_INCH)}
                                 </span>
                             </div>
                         </div>

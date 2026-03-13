@@ -1,28 +1,33 @@
 
 import { BoardElement, ElementType, DrawingLine, DeploymentZone } from '../types';
 
-export const isValidBoardElement = (el: any): el is BoardElement => {
-  if (!el || typeof el !== 'object') return false;
-  
+// Type guard helper for safely accessing properties on unknown values
+type AnyRecord = Record<string, unknown>;
+const isRecord = (val: unknown): val is AnyRecord =>
+  val !== null && typeof val === 'object';
+
+export const isValidBoardElement = (el: unknown): el is BoardElement => {
+  if (!isRecord(el)) return false;
+
   // ID check
   if (typeof el.id !== 'string' || !el.id) return false;
-  
+
   // Type check
-  if (!Object.values(ElementType).includes(el.type)) return false;
-  
+  if (!Object.values(ElementType).includes(el.type as ElementType)) return false;
+
   // Coordinate check - ensure they are numbers
   if (typeof el.x !== 'number' || isNaN(el.x)) return false;
   if (typeof el.y !== 'number' || isNaN(el.y)) return false;
-  
+
   // Dimension check
   if (typeof el.width !== 'number' || isNaN(el.width) || el.width <= 0) return false;
   if (typeof el.height !== 'number' || isNaN(el.height) || el.height <= 0) return false;
-  
+
   // Model-specific checks if needed, but keeping it general prevents over-validation errors on optional fields
   return true;
 };
 
-export const sanitizeBoardElements = (elements: any[]): BoardElement[] => {
+export const sanitizeBoardElements = (elements: unknown[]): BoardElement[] => {
   if (!Array.isArray(elements)) return [];
   return elements.filter(isValidBoardElement).map(el => ({
       ...el,
@@ -34,8 +39,8 @@ export const sanitizeBoardElements = (elements: any[]): BoardElement[] => {
   }));
 };
 
-export const isValidLine = (l: any): l is DrawingLine => {
-    if (!l || typeof l !== 'object') return false;
+export const isValidLine = (l: unknown): l is DrawingLine => {
+    if (!isRecord(l)) return false;
     if (typeof l.id !== 'string' || !l.id) return false;
     if (typeof l.x1 !== 'number' || isNaN(l.x1)) return false;
     if (typeof l.y1 !== 'number' || isNaN(l.y1)) return false;
@@ -45,25 +50,26 @@ export const isValidLine = (l: any): l is DrawingLine => {
     return true;
 };
 
-export const sanitizeLines = (lines: any[]): DrawingLine[] => {
+export const sanitizeLines = (lines: unknown[]): DrawingLine[] => {
     if (!Array.isArray(lines)) return [];
     return lines.filter(isValidLine);
 };
 
-export const isValidZone = (z: any): z is DeploymentZone => {
-    if (!z || typeof z !== 'object') return false;
+export const isValidZone = (z: unknown): z is DeploymentZone => {
+    if (!isRecord(z)) return false;
     if (typeof z.id !== 'string' || !z.id) return false;
     if (!Array.isArray(z.points)) return false;
-    
+
     // Validate points if present
     if (z.points.length > 0) {
-        // Just check the first point for efficiency
-        if (typeof z.points[0].x !== 'number' || typeof z.points[0].y !== 'number') return false;
+        const firstPoint = z.points[0];
+        if (!isRecord(firstPoint)) return false;
+        if (typeof firstPoint.x !== 'number' || typeof firstPoint.y !== 'number') return false;
     }
     return true;
 };
 
-export const sanitizeZones = (zones: any[]): DeploymentZone[] => {
+export const sanitizeZones = (zones: unknown[]): DeploymentZone[] => {
     if (!Array.isArray(zones)) return [];
     return zones.filter(isValidZone);
 };

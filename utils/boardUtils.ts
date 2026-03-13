@@ -6,7 +6,7 @@ const MAX_ITERATIONS = 1500; // Safety break for spiral searches
 const EPSILON = 0.0001;
 
 // Helper to ensure numbers are safe for math
-const isValidNumber = (n: any): n is number => {
+const isValidNumber = (n: unknown): n is number => {
     return typeof n === 'number' && Number.isFinite(n) && !Number.isNaN(n);
 };
 
@@ -385,7 +385,7 @@ export const checkLineElementIntersections = (
     }
 
     const intersectedIds: string[] = [];
-    const targets = elements.filter(el => el.type === ElementType.TERRAIN);
+    const targets = elements.filter(el => el.type === ElementType.TERRAIN || el.type === ElementType.MODEL);
 
     targets.forEach(el => {
         const minX = Math.min(lineStart.x, lineEnd.x);

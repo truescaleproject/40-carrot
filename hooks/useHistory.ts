@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-export function useHistory<T>(initialStateFactory: () => T) {
+export function useHistory<T>(_initialStateFactory?: () => T) {
   const [history, setHistory] = useState<T[]>([]);
   const [redoStack, setRedoStack] = useState<T[]>([]);
 

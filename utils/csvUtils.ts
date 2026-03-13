@@ -1,5 +1,5 @@
 
-import { BoardElement, ElementType, ModelStats, Weapon } from '../types';
+import { BoardElement, ElementType, ModelStats, Weapon, WeaponType } from '../types';
 import { WEAPON_MODIFIER_DEFINITIONS, MM_PER_INCH, DEFAULT_BASE_SIZE_MM } from '../constants';
 
 // --- Types ---
@@ -458,7 +458,7 @@ const buildStatsFromRow = (row: CsvRow): ModelStats => {
             weapons.push({
                 id: Math.random().toString(36).substring(2, 11),
                 name: name,
-                type: (row[`w${i}_type`] as any) || 'RANGED',
+                type: (row[`w${i}_type`] as WeaponType) || 'RANGED',
                 range: profile.range!,
                 a: profile.a!,
                 skill: profile.skill!,

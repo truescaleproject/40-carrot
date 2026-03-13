@@ -65,9 +65,11 @@ export const App = () => {
   const [boardWidth, setBoardWidth] = useState(DEFAULT_BOARD_WIDTH);
   const [boardHeight, setBoardHeight] = useState(DEFAULT_BOARD_HEIGHT);
   const [boardCount, setBoardCount] = useState(1);
+  const [boardNames, setBoardNames] = useState<Record<number, string>>({});
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [activeColor, setActiveColor] = useState(COLORS[0]);
   const [auraRadius, setAuraRadius] = useState<number | null>(null);
+  const [threatRange, setThreatRange] = useState<number>(0); // 0=off, 1=movement, 2=movement+charge
   const [focusedBoardIndex, setFocusedBoardIndex] = useState(0);
   
   const [creationType, setCreationType] = useState<ElementType>(ElementType.MODEL);
@@ -80,7 +82,7 @@ export const App = () => {
   const [newElementStats, setNewElementStats] = useState<ModelStats>(JSON.parse(JSON.stringify(DEFAULT_MODEL_STATS)));
   const [addingModifierToWeaponId, setAddingModifierToWeaponId] = useState<string | null>(null);
 
-  const [welcomeDismissed, setWelcomeDismissed] = useState(() => !!safeLocalStorageGet('welcomeDismissed'));
+  const [welcomeDismissed, setWelcomeDismissed] = useState(() => safeLocalStorageGet('welcomeDismissedVersion') === APP_VERSION);
   const [importSummary, setImportSummary] = useState<ImportSummaryData | null>(null);
   
   const [isTerrainLocked, setIsTerrainLocked] = useState(false);
@@ -153,8 +155,8 @@ export const App = () => {
       const isSingleGroup = validTargets.length > 0 && new Set(validTargets.map(e => e.groupId)).size === 1 && !!validTargets[0].groupId;
       
       if (validTargets.length > 0) {
-          if (isSingleGroup) squadName = validTargets[0].groupLabel || "Squad";
-          else if (validTargets.length === 1) squadName = validTargets[0].label;
+          if (validTargets.length === 1) squadName = validTargets[0].label;
+          else if (isSingleGroup) squadName = validTargets[0].groupLabel || "Squad";
           else squadName = "Multiple Units";
       }
 
@@ -698,6 +700,96 @@ export const App = () => {
       e.target.value = '';
   }, [saveHistory, elements, lines, zones]);
 
+  // --- LOCAL SAVE SLOTS ---
+  const SAVE_PREFIX = '40carrot_save_';
+
+  const listLocalSaves = useCallback((): { name: string; timestamp: number; size: number }[] => {
+      const saves: { name: string; timestamp: number; size: number }[] = [];
+      try {
+          for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key?.startsWith(SAVE_PREFIX)) {
+                  const raw = localStorage.getItem(key);
+                  if (raw) {
+                      try {
+                          const parsed = JSON.parse(raw);
+                          saves.push({ name: key.slice(SAVE_PREFIX.length), timestamp: parsed._timestamp || 0, size: raw.length });
+                      } catch { saves.push({ name: key.slice(SAVE_PREFIX.length), timestamp: 0, size: raw.length }); }
+                  }
+              }
+          }
+      } catch {}
+      return saves.sort((a, b) => b.timestamp - a.timestamp);
+  }, []);
+
+  const saveLocal = useCallback((name: string): boolean => {
+      const data = {
+          _timestamp: Date.now(),
+          version: APP_VERSION,
+          elements, lines, zones, boardWidth, boardHeight, boardCount, boardNames, settings
+      };
+      const json = JSON.stringify(data);
+      return safeLocalStorageSet(SAVE_PREFIX + name, json);
+  }, [elements, lines, zones, boardWidth, boardHeight, boardCount, boardNames, settings]);
+
+  const loadLocal = useCallback((name: string): boolean => {
+      const raw = safeLocalStorageGet(SAVE_PREFIX + name);
+      if (!raw) return false;
+      try {
+          const data = JSON.parse(raw);
+          saveHistory({ elements, lines, zones });
+          if (data.elements) setElements(data.elements);
+          if (data.lines) setLines(data.lines);
+          if (data.zones) setZones(data.zones);
+          if (data.boardWidth) setBoardWidth(data.boardWidth);
+          if (data.boardHeight) setBoardHeight(data.boardHeight);
+          if (data.boardCount) setBoardCount(data.boardCount);
+          if (data.boardNames) setBoardNames(data.boardNames);
+          if (data.settings) setSettings(data.settings);
+          return true;
+      } catch (err) {
+          console.error("Failed to load local save", err);
+          return false;
+      }
+  }, [saveHistory, elements, lines, zones]);
+
+  const deleteLocalSave = useCallback((name: string) => {
+      try { localStorage.removeItem(SAVE_PREFIX + name); } catch {}
+  }, []);
+
+  // Auto-save on page unload
+  const stateRef = useRef({ elements, lines, zones, boardWidth, boardHeight, boardCount, boardNames, settings });
+  useEffect(() => { stateRef.current = { elements, lines, zones, boardWidth, boardHeight, boardCount, boardNames, settings }; });
+  useEffect(() => {
+      const handleUnload = () => {
+          const s = stateRef.current;
+          const data = JSON.stringify({ _timestamp: Date.now(), _autosave: true, version: APP_VERSION, ...s });
+          try { localStorage.setItem(SAVE_PREFIX + '_autosave', data); } catch {}
+      };
+      window.addEventListener('beforeunload', handleUnload);
+      return () => window.removeEventListener('beforeunload', handleUnload);
+  }, []);
+
+  // Load autosave on mount (only if no elements exist yet)
+  useEffect(() => {
+      if (elements.length > 0) return;
+      const raw = safeLocalStorageGet(SAVE_PREFIX + '_autosave');
+      if (!raw) return;
+      try {
+          const data = JSON.parse(raw);
+          if (data.elements?.length > 0) {
+              setElements(data.elements);
+              if (data.lines) setLines(data.lines);
+              if (data.zones) setZones(data.zones);
+              if (data.boardWidth) setBoardWidth(data.boardWidth);
+              if (data.boardHeight) setBoardHeight(data.boardHeight);
+              if (data.boardCount) setBoardCount(data.boardCount);
+              if (data.boardNames) setBoardNames(data.boardNames);
+          }
+      } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleExportTerrain = useCallback(() => {
       const terrain = elements.filter(e => e.type === ElementType.TERRAIN);
       const data = {
@@ -832,11 +924,36 @@ export const App = () => {
       if (index >= 0 && index < PRESET_MAPS.length) {
           const map = PRESET_MAPS[index];
           saveHistory({ elements, lines, zones });
-          setElements(prev => [...prev.filter(e => e.type !== ElementType.TERRAIN), ...map.terrain]);
+
+          // Calculate where the focused board lives vs where preset terrain is authored (board 0)
+          const hGap = 12 * DEFAULT_PPI;
+          const hPitch = (boardWidth * DEFAULT_PPI) + hGap;
+          const vPitch = (boardHeight * DEFAULT_PPI) + (20 * DEFAULT_PPI);
+          const col = focusedBoardIndex % 3;
+          const row = Math.floor(focusedBoardIndex / 3);
+          const dx = col * hPitch;
+          const dy = row * vPitch;
+
+          setElements(prev => [
+              // Keep everything EXCEPT terrain on the focused board
+              ...prev.filter(e => {
+                  if (e.type !== ElementType.TERRAIN) return true;
+                  const cx = e.x + e.width / 2;
+                  const cy = e.y + e.height / 2;
+                  return getBoardIndexForPoint(cx, cy) !== focusedBoardIndex;
+              }),
+              // Add preset terrain offset to the focused board, with fresh IDs
+              ...map.terrain.map(t => ({
+                  ...t,
+                  id: Math.random().toString(36).substring(2, 11),
+                  x: t.x + dx,
+                  y: t.y + dy,
+              }))
+          ]);
           setBoardWidth(map.boardWidth);
           setBoardHeight(map.boardHeight);
       }
-  }, [saveHistory, elements, lines, zones]);
+  }, [saveHistory, elements, lines, zones, focusedBoardIndex, boardWidth, boardHeight]);
 
   const onCopy = useCallback(() => { 
       if (selectedIds.length === 0) return;
@@ -854,18 +971,19 @@ export const App = () => {
           navigator.clipboard.readText().then(text => {
               try {
                   const pasted = JSON.parse(text);
-                  if (Array.isArray(pasted) && pasted.every((e: any) => e.type && e.id)) {
+                  if (Array.isArray(pasted) && pasted.every((e: Record<string, unknown>) => e.type && e.id)) {
                       saveHistory({ elements, lines, zones });
-                      
+                      const pastedElements = pasted as BoardElement[];
+
                       // 1. Calculate Center of Paste Group
                       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                      pasted.forEach((e: any) => {
+                      pastedElements.forEach((e) => {
                           minX = Math.min(minX, e.x);
                           minY = Math.min(minY, e.y);
                           maxX = Math.max(maxX, e.x + e.width);
                           maxY = Math.max(maxY, e.y + e.height);
                       });
-                      
+
                       const groupCenterX = (minX + maxX) / 2;
                       const groupCenterY = (minY + maxY) / 2;
 
@@ -885,7 +1003,7 @@ export const App = () => {
                       const dy = targetY - groupCenterY;
 
                       // 3. Create Tentative Elements at Target
-                      let newElements = pasted.map((e: any) => ({
+                      let newElements = pastedElements.map((e) => ({
                           ...e,
                           id: Math.random().toString(36).substring(2, 11),
                           x: e.x + dx,
@@ -1067,6 +1185,10 @@ export const App = () => {
       setAuraRadius(prev => prev === null ? 3 : (prev === 3 ? 6 : (prev === 6 ? 9 : (prev === 9 ? 12 : null))));
   }, []);
 
+  const cycleThreatRange = useCallback(() => {
+      setThreatRange(prev => prev === 0 ? 1 : (prev === 1 ? 2 : 0));
+  }, []);
+
   const toggleEdgeMeasurements = useCallback(() => setShowEdgeMeasurements(prev => !prev), []);
   const toggleTerrainVisibility = useCallback(() => setIsTerrainVisible(prev => !prev), []);
   const toggleTerrainLock = useCallback(() => setIsTerrainLocked(prev => !prev), []);
@@ -1094,7 +1216,7 @@ export const App = () => {
       const centerY = boardStartY + (boardHeight * DEFAULT_PPI) / 2;
 
       // 40mm marker size
-      const markerSize = (40 / 25.4) * DEFAULT_PPI; 
+      const markerSize = (40 / MM_PER_INCH) * DEFAULT_PPI;
 
       const createObj = (x: number, y: number, label: string) => ({
           id: Math.random().toString(36).substring(2, 11),
@@ -1190,7 +1312,7 @@ export const App = () => {
           const count = groupModels.length;
           // Use max width to ensure spacing fits the largest base in group
           const maxBaseSize = Math.max(...groupModels.map(m => Math.max(m.width, m.height)));
-          const spacing = maxBaseSize + (2 * (DEFAULT_PPI / 25.4)); // 2mm gap between bases
+          const spacing = maxBaseSize + (2 * (DEFAULT_PPI / MM_PER_INCH)); // 2mm gap between bases
           
           // Estimate group footprint radius for safe placement
           const groupRadius = Math.max(maxBaseSize, Math.sqrt(count) * (spacing / 1.5));
@@ -1294,7 +1416,7 @@ export const App = () => {
       onCopy, onPaste, onDelete: deleteSelected, onGroupToggle,
       onUndo, onRedo, onClearLines, onClearZones,
       onToggleTerrainLock: toggleTerrainLock, onResetView,
-      applyFormation, cycleAuraRadius, toggleEdgeMeasurements, toggleTerrainVisibility,
+      applyFormation, cycleAuraRadius, toggleEdgeMeasurements, toggleTerrainVisibility, cycleThreatRange,
       canUndo: history.length > 0, canRedo: redoStack.length > 0
   });
 
@@ -1335,6 +1457,7 @@ export const App = () => {
                     canUndo={history.length > 0} canRedo={redoStack.length > 0}
                     labelFontSize={settings.labelFontSize}
                     auraRadius={auraRadius}
+                    threatRange={threatRange}
                     objectivesUnlocked={!isObjectivesLocked}
                     isTerrainLocked={isTerrainLocked}
                     showEdgeMeasurements={showEdgeMeasurements}
@@ -1377,6 +1500,7 @@ export const App = () => {
                             handleResetBoard={handleResetBoard} isResetConfirming={isResetConfirming}
                             handleExportState={handleExportState} handleImportState={handleImportState}
                             handleExportTerrain={handleExportTerrain} handleImportTerrain={handleImportTerrain}
+                            listLocalSaves={listLocalSaves} saveLocal={saveLocal} loadLocal={loadLocal} deleteLocalSave={deleteLocalSave}
                             hasMultipleSelected={selectedIds.length > 1}
                             isSingleGroup={isSingleGroup}
                             distinctGroupIds={[]}
@@ -1423,6 +1547,7 @@ export const App = () => {
                                 canUndo={history.length > 0} canRedo={redoStack.length > 0}
                                 sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
                                 auraRadius={auraRadius} cycleAuraRadius={cycleAuraRadius}
+                                threatRange={threatRange} cycleThreatRange={cycleThreatRange}
                                 clearLines={onClearLines} clearDeploymentZones={onClearZones}
                                 onClearText={onClearText}
                                 isTerrainLocked={isTerrainLocked} toggleTerrainLock={toggleTerrainLock}
@@ -1448,10 +1573,13 @@ export const App = () => {
                                     labelFontSize={settings.labelFontSize}
                                     sidebarOpen={sidebarOpen}
                                     auraRadius={auraRadius}
+                                    threatRange={threatRange}
                                     objectivesUnlocked={!isObjectivesLocked}
                                     isTerrainLocked={isTerrainLocked}
                                     showEdgeMeasurements={showEdgeMeasurements}
                                     boardCount={boardCount}
+                                    boardNames={boardNames}
+                                    onRenameBattlefield={(idx, name) => setBoardNames(prev => ({ ...prev, [idx]: name }))}
                                     showCoherencyAlerts={settings.showCoherencyAlerts}
                                     isTerrainVisible={isTerrainVisible}
                                     areZonesVisible={areZonesVisible}
@@ -1479,12 +1607,13 @@ export const App = () => {
                             isObjectivesLocked={isObjectivesLocked}
                             toggleObjectiveLock={() => setIsObjectivesLocked(!isObjectivesLocked)}
                             onOpenDataCards={() => setShowDataCards(true)}
+                            isRightPanelOpen={!!selectionData}
                         />
                         {settings.showQuickMenu && !sidebarOpen && activeBottomPanel === 'NONE' && (
                             <QuickMenu onAdd={(type) => addElement(type, 'QUICK_MENU')} />
                         )}
                         {!welcomeDismissed && (
-                            <WelcomeBanner onDismiss={() => { setWelcomeDismissed(true); safeLocalStorageSet('welcomeDismissed', 'true'); }} sidebarOpen={sidebarOpen} />
+                            <WelcomeBanner onDismiss={() => { setWelcomeDismissed(true); safeLocalStorageSet('welcomeDismissedVersion', APP_VERSION); }} sidebarOpen={sidebarOpen} />
                         )}
                         <ImportSummaryToast data={importSummary} onSelect={() => {
                             if (importSummary) setSelectedIds(importSummary.ids);

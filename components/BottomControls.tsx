@@ -1,5 +1,5 @@
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { 
   Cpu, Dices, Palette, Keyboard, FileDown, Target, Settings, HelpCircle,
   MousePointer2, Hand, Ruler, Map, X, Loader2
@@ -43,6 +43,7 @@ interface BottomControlsProps {
   onBackupData: () => void;
   onRestoreData: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onOpenDataCards?: () => void;
+  isRightPanelOpen?: boolean;
 }
 
 export const BottomControls: React.FC<BottomControlsProps> = ({
@@ -51,12 +52,25 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
   elements, boardWidth, boardHeight, onDeploy, onImport, getViewport,
   onSpawnObjectives, onClearObjectives, isObjectivesLocked, toggleObjectiveLock,
   appSettings, onUpdateSetting, onShowWelcome,
-  onBackupData, onRestoreData, onOpenDataCards
+  onBackupData, onRestoreData, onOpenDataCards,
+  isRightPanelOpen = false
 }) => {
 
   const togglePanel = (panel: ActiveBottomPanel) => {
     setActiveBottomPanel(activeBottomPanel === panel ? 'NONE' : panel);
   };
+
+  // Close panel on Escape key
+  useEffect(() => {
+    if (activeBottomPanel === 'NONE') return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+        setActiveBottomPanel('NONE');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeBottomPanel, setActiveBottomPanel]);
 
   const objectiveCount = elements.filter(e => e.type === ElementType.OBJECTIVE).length;
 
@@ -199,22 +213,36 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
                         <div>
                             <h4 className="text-xs font-bold text-text-primary uppercase mb-2 border-b border-grim-700 pb-1 flex items-center gap-2"><Keyboard size={13}/> Shortcuts</h4>
                             <div className="grid grid-cols-2 gap-1.5 text-[10px] text-text-secondary font-mono bg-grim-800/20 p-2.5 rounded-lg border border-grim-700/30">
+                                <div className="col-span-2 text-[8px] text-slate-500 uppercase font-bold tracking-wider pt-0.5">Tools</div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Select</span><span className="text-grim-gold">V</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Pan</span><span className="text-grim-gold">B</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Measure</span><span className="text-grim-gold">M</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Arrow</span><span className="text-grim-gold">A</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Draw</span><span className="text-grim-gold">.</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Deploy Zone</span><span className="text-grim-gold">,</span></div>
+                                <div className="col-span-2 text-[8px] text-slate-500 uppercase font-bold tracking-wider pt-1.5">Actions</div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Undo</span><span className="text-grim-gold">Ctrl+Z</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Redo</span><span className="text-grim-gold">Ctrl+Shift+Z</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Copy</span><span className="text-grim-gold">Ctrl+C</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Paste</span><span className="text-grim-gold">Ctrl+V</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Delete</span><span className="text-grim-gold">Del</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Group</span><span className="text-grim-gold">G</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Damage Mode</span><span className="text-grim-gold">Tab</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Clear Lines</span><span className="text-grim-gold">[</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Clear Zones</span><span className="text-grim-gold">]</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Close Panel</span><span className="text-grim-gold">Esc</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Snap to Grid</span><span className="text-grim-gold">Shift</span></div>
+                                <div className="col-span-2 text-[8px] text-slate-500 uppercase font-bold tracking-wider pt-1.5">Toggles</div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Auras</span><span className="text-grim-gold">R</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Sidebar</span><span className="text-grim-gold">O</span></div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Lock Terrain</span><span className="text-grim-gold">L</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Hide Terrain</span><span className="text-grim-gold">H</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Edge Lengths</span><span className="text-grim-gold">X</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Threat Range</span><span className="text-grim-gold">T</span></div>
+                                <div className="col-span-2 text-[8px] text-slate-500 uppercase font-bold tracking-wider pt-1.5">Formations</div>
                                 <div className="flex justify-between px-1"><span className="text-text-muted">Coherency</span><span className="text-grim-gold">C</span></div>
-                                <div className="flex justify-between px-1"><span className="text-text-muted">Group</span><span className="text-grim-gold">G</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Base-to-Base</span><span className="text-grim-gold">Shift+C</span></div>
+                                <div className="flex justify-between px-1"><span className="text-text-muted">Circle</span><span className="text-grim-gold">Alt+C</span></div>
                             </div>
                         </div>
                         <div className="pt-3 border-t border-grim-700/50">
@@ -237,11 +265,12 @@ export const BottomControls: React.FC<BottomControlsProps> = ({
     <div className="absolute bottom-0 left-0 w-full pointer-events-none z-50 flex flex-col justify-end">
       {activeBottomPanel !== 'NONE' && (
         <div className={`
-            absolute bottom-[4.5rem] right-4 w-[24rem] max-h-[70vh]
+            absolute bottom-[4.5rem] w-[24rem] max-h-[70vh]
+            ${isRightPanelOpen ? 'right-[19.5rem]' : 'right-4'}
             ${isCompactPanel ? 'h-[22.5rem]' : (isTallPanel ? 'h-[37.5rem]' : 'h-[30rem]')}
             bg-grim-900/95 backdrop-blur-md border border-grim-700/80 shadow-2xl rounded-xl pointer-events-auto
             animate-in slide-in-from-bottom-2 fade-in duration-200
-            flex flex-col z-50 overflow-hidden transition-[height] ease-in-out
+            flex flex-col z-50 overflow-hidden transition-[height,right] ease-in-out
         `}>
             <div className="flex-1 overflow-hidden relative flex flex-col">
                 {renderContent()}

@@ -14,18 +14,19 @@ function simpleHash(str: string): string {
   return hash.toString(16);
 }
 
-function extractNextDataJson(html: string): any | null {
+function extractNextDataJson(html: string): Record<string, unknown> | null {
   const m = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i);
   if (!m?.[1]) return null;
   try { return JSON.parse(m[1]); } catch { return null; }
 }
 
-function tryParse39kData(json: any): UnitCardData | null {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External scraped JSON has no stable schema
+function tryParse39kData(json: Record<string, any>): UnitCardData | null {
   const ds = json?.props?.pageProps?.datasheet;
   if (!ds) return null;
 
   try {
-    const getStat = (val: any, type: any) => normalizeStat(val, type);
+    const getStat = (val: string | number | null | undefined, type: Parameters<typeof normalizeStat>[1]) => normalizeStat(val, type);
     const statsObj = Array.isArray(ds.stats) ? ds.stats[0] : ds.stats;
 
     const mapWeapon = (w: any, type: 'ranged' | 'melee', i: number) => ({

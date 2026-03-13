@@ -33,6 +33,7 @@ export interface MobileLayoutProps {
   
   labelFontSize: number;
   auraRadius: number | null;
+  threatRange?: number;
   objectivesUnlocked: boolean;
   isTerrainLocked: boolean;
   showEdgeMeasurements: boolean;
@@ -84,6 +85,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = (props) => {
                 labelFontSize={props.labelFontSize}
                 sidebarOpen={false} // Always closed on mobile layout
                 auraRadius={props.auraRadius}
+                threatRange={props.threatRange}
                 objectivesUnlocked={props.objectivesUnlocked}
                 isTerrainLocked={props.isTerrainLocked}
                 showEdgeMeasurements={props.showEdgeMeasurements}

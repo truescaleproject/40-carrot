@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { InteractionMode } from '../types';
 import { 
-  MousePointer2, Hand, Pencil, Ruler, ScanLine, Undo2, Redo2, CircleDashed, Eraser, SquareX, Lock, Unlock, Maximize, Mountain, SquareDashed, PanelLeft, MoveRight, Type, MessageSquareX
+  MousePointer2, Hand, Pencil, Ruler, ScanLine, Undo2, Redo2, CircleDashed, Eraser, SquareX, Lock, Unlock, Maximize, Mountain, SquareDashed, PanelLeft, MoveRight, Type, MessageSquareX, Crosshair
 } from 'lucide-react';
 
 interface ToolbarProps {
@@ -16,6 +16,8 @@ interface ToolbarProps {
   toggleSidebar: () => void;
   auraRadius: number | null;
   cycleAuraRadius: () => void;
+  threatRange: number;
+  cycleThreatRange: () => void;
   clearLines: () => void;
   clearDeploymentZones: () => void;
   onClearText: () => void;
@@ -31,7 +33,7 @@ interface ToolbarProps {
 
 export const Toolbar: React.FC<ToolbarProps> = ({
   mode, setMode, undo, redo, canUndo, canRedo, sidebarOpen, toggleSidebar,
-  auraRadius, cycleAuraRadius, clearLines, clearDeploymentZones, onClearText,
+  auraRadius, cycleAuraRadius, threatRange, cycleThreatRange, clearLines, clearDeploymentZones, onClearText,
   isTerrainLocked, toggleTerrainLock, showEdgeMeasurements, toggleEdgeMeasurements,
   isTerrainVisible, toggleTerrainVisibility, areZonesVisible, toggleZoneVisibility
 }) => {
@@ -258,6 +260,22 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                             <CircleDashed size={18} />
                         )}
                         <Tooltip text={`Toggle Auras: ${auraRadius ? auraRadius + '"' : 'Off'}`} shortcut="R" />
+                    </button>
+
+                    <button
+                        onClick={cycleThreatRange}
+                        aria-label={`Threat Range: ${threatRange === 0 ? 'Off' : threatRange === 1 ? 'Movement' : 'Movement+Charge'}`}
+                        className={`relative group p-2 rounded-full transition-colors flex items-center justify-center ${threatRange === 1 ? 'text-red-400 bg-grim-800 shadow-[0_0_10px_rgba(248,113,113,0.2)]' : threatRange === 2 ? 'text-amber-400 bg-grim-800 shadow-[0_0_10px_rgba(251,191,36,0.2)]' : 'text-text-muted hover:text-text-primary hover:bg-grim-800'}`}
+                    >
+                        {threatRange !== 0 ? (
+                            <div className="relative w-5 h-5 flex items-center justify-center">
+                                <Crosshair size={18} className="opacity-50" />
+                                <span className="absolute text-[8px] font-bold font-mono">{threatRange === 1 ? 'M' : 'M+C'}</span>
+                            </div>
+                        ) : (
+                            <Crosshair size={18} />
+                        )}
+                        <Tooltip text={`Threat Range: ${threatRange === 0 ? 'Off' : threatRange === 1 ? 'Movement' : 'Move+Charge'}`} />
                     </button>
                 </div>
             </div>

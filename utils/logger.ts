@@ -2,7 +2,7 @@
 import { APP_VERSION } from '../constants';
 
 export interface ErrorContext {
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined | null;
 }
 
 /**

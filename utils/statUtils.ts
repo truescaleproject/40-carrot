@@ -1,5 +1,5 @@
 
-export const normalizeStat = (value: any, type: 'M' | 'T' | 'SV' | 'INV' | 'W' | 'LD' | 'OC' | 'WS' | 'BS'): string => {
+export const normalizeStat = (value: string | number | null | undefined, type: 'M' | 'T' | 'SV' | 'INV' | 'W' | 'LD' | 'OC' | 'WS' | 'BS'): string => {
   if (!value) return '-';
   const str = String(value).trim();
   if (str === '-' || str.toLowerCase() === 'n/a' || str === '') return '-';

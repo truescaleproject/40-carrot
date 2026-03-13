@@ -18,7 +18,6 @@ export const MM_PER_INCH = 25.4;
 
 // Global Layout Constants
 export const BOARD_OFFSET = 100; // Padding around the board in pixels
-export const SCALE_PIXELS_PER_INCH = MM_PER_INCH; // Alias kept for backward compat
 export const BOARDS_PER_ROW = 3;
 export const MAX_BOARD_COUNT = 9;
 export const DEFAULT_BASE_SIZE_MM = 32;

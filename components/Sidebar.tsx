@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Swords, Copy, Trash2, Settings, ChevronDown, ChevronUp, PlusSquare } from 'lucide-react';
+import { Swords, Copy, Trash2, Settings, PlusSquare } from 'lucide-react';
 import { ElementType, ModelStats, Weapon, BoardElement } from '../types';
 import { BoardSettings } from './sidebar/BoardSettings';
 import { CreationPanel } from './sidebar/CreationPanel';
 import { EditPanelSingle } from './sidebar/EditPanelSingle';
 import { EditPanelMulti } from './sidebar/EditPanelMulti';
 import { UnitCompositionList } from './sidebar/UnitCompositionList';
-import { COLORS, APP_VERSION } from '../constants';
+import { COLORS, APP_VERSION, MM_PER_INCH, DEFAULT_BASE_SIZE_MM } from '../constants';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -51,6 +51,10 @@ interface SidebarProps {
   handleImportState: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleExportTerrain: () => void;
   handleImportTerrain: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  listLocalSaves: () => { name: string; timestamp: number; size: number }[];
+  saveLocal: (name: string) => boolean;
+  loadLocal: (name: string) => boolean;
+  deleteLocalSave: (name: string) => void;
   selectedIds: string[];
   singleSelectedElement: BoardElement | null;
   hasMultipleSelected: boolean;
@@ -147,6 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
                             handleClearBoardImage={props.handleClearBoardImage} hasBackgroundImage={props.hasBackgroundImage}
                             handleExportState={props.handleExportState} handleImportState={props.handleImportState}
                             handleExportTerrain={props.handleExportTerrain} handleImportTerrain={props.handleImportTerrain}
+                            listLocalSaves={props.listLocalSaves} saveLocal={props.saveLocal} loadLocal={props.loadLocal} deleteLocalSave={props.deleteLocalSave}
                             handleDuplicateBoard={props.handleDuplicateBoard}
                             handleDeleteBattlefield={props.handleDeleteBattlefield}
                             handleLoadPresetMap={props.handleLoadPresetMap}
@@ -164,7 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
                             <button 
                                 onClick={() => {
                                     setCreationType(ElementType.MODEL);
-                                    const px = 32 / 25.4 * pixelsPerInch;
+                                    const px = DEFAULT_BASE_SIZE_MM / MM_PER_INCH * pixelsPerInch;
                                     setNewElementWidth(px);
                                     setNewElementHeight(px);
                                     if (props.creationSide === 'ATTACKER') {

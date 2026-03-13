@@ -32,10 +32,13 @@ interface BoardProps {
   labelFontSize: number;
   sidebarOpen: boolean;
   auraRadius: number | null;
+  threatRange?: number;
   objectivesUnlocked: boolean;
   isTerrainLocked: boolean;
   showEdgeMeasurements?: boolean;
   boardCount?: number;
+  boardNames?: Record<number, string>;
+  onRenameBattlefield?: (index: number, name: string) => void;
   showCoherencyAlerts: boolean;
   isTerrainVisible: boolean;
   areZonesVisible: boolean;
@@ -85,15 +88,17 @@ const BoardElementItem = React.memo(({
     const isObjective = element.type === ElementType.OBJECTIVE;
     const isLockedTerrain = element.type === ElementType.TERRAIN && isTerrainLocked;
     
-    const zIndex = (isDragged ? 1000 : (element.type === ElementType.MODEL ? 30 : (element.type === ElementType.OBJECTIVE ? 5 : (isText ? 40 : 10)))) 
-        + (isSelected ? 10 : 0) 
-        + (isSidebarHovered ? 60 : 0) 
+    const baseZ = element.type === ElementType.MODEL ? 30 : (element.type === ElementType.OBJECTIVE ? (isTerrainLocked ? 20 : 5) : (isText ? 40 : 10));
+    const zIndex = (isDragged ? 1000 : baseZ)
+        + (isSelected ? 10 : 0)
+        + (isSidebarHovered ? 60 : 0)
         + (isHovered ? 60 : 0);
     
     const transitionClass = isDragged ? '' : 'transition-opacity duration-300 ease-out';
     const shadows: string[] = [];
     if (element.type === ElementType.MODEL && element.strokeColor) shadows.push(`inset 0 0 0 ${3 * lineScale}px ${element.strokeColor}`);
-    if (isIntersected) shadows.push(`0 0 15px 4px rgba(250, 204, 21, 0.6)`);
+    if (isIntersected && element.type === ElementType.MODEL) shadows.push(`0 0 15px 4px rgba(74, 222, 128, 0.7)`);
+    else if (isIntersected) shadows.push(`0 0 15px 4px rgba(250, 204, 21, 0.6)`);
     else if (isSidebarHovered) shadows.push(`0 0 0 ${2 * lineScale}px #22d3ee`, `0 0 20px 5px rgba(34,211,238,0.6)`);
     else if (isCoherencyBroken) shadows.push(`0 0 0 ${2 * lineScale}px #ef4444`, `0 0 35px 5px rgba(239,68,68,1)`);
     else if (isHovered && !isDragged && element.type === ElementType.MODEL) shadows.push(`0 0 0 ${2 * lineScale}px rgba(255,255,255,0.8)`, `0 0 15px 2px rgba(255,255,255,0.6)`);
@@ -117,7 +122,7 @@ const BoardElementItem = React.memo(({
 
     const maxWounds = element.stats ? parseInt(element.stats.w) : 1;
     const currentWounds = element.currentWounds ?? maxWounds;
-    const showWoundCounter = element.type === ElementType.MODEL && element.stats;
+    const showWoundCounter = element.type === ElementType.MODEL;
     
     return (
         <div
@@ -132,7 +137,7 @@ const BoardElementItem = React.memo(({
                 zIndex: zIndex,
                 outline: isSelected ? `${2 * lineScale}px dashed rgba(57, 255, 20, 0.8)` : undefined,
                 outlineOffset: isSelected ? '2px' : undefined,
-                border: isIntersected ? '2px solid #facc15' : undefined, 
+                border: isIntersected ? `2px solid ${element.type === ElementType.MODEL ? '#4ade80' : '#facc15'}` : undefined,
                 pointerEvents: isLockedTerrain ? 'none' : 'auto',
                 cursor: element.locked ? 'not-allowed' : (mode === InteractionMode.SELECT ? 'move' : undefined),
                 ...objectiveStyle
@@ -151,17 +156,18 @@ const BoardElementItem = React.memo(({
                 isEditing ? (
                     <textarea
                         autoFocus
-                        className="w-full h-full bg-grim-900/80 text-white p-2 border border-grim-gold rounded resize-none focus:outline-none font-mono leading-tight"
-                        style={{ color: element.color, fontSize: `${labelFontSize * 1.5}px` }}
+                        className="w-full h-full bg-transparent text-white p-1.5 border border-dashed border-white/30 rounded-sm resize-none focus:outline-none focus:border-white/50 leading-snug"
+                        style={{ color: element.color, fontSize: `${labelFontSize * 1.5}px`, fontFamily: 'system-ui, -apple-system, sans-serif' }}
                         value={element.label}
+                        placeholder="Type here..."
                         onChange={(e) => onTextChange(element.id, e.target.value)}
                         onBlur={() => onTextBlur(element.id)}
-                        onKeyDown={(e) => e.stopPropagation()} 
+                        onKeyDown={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
                     />
                 ) : (
-                    <div className="w-full h-full p-2 overflow-hidden whitespace-pre-wrap font-mono leading-tight pointer-events-none flex items-start" style={{ color: element.color, fontSize: `${labelFontSize * 1.5}px` }}>
-                        {element.label || <span className="opacity-50 italic">Empty Note</span>}
+                    <div className="w-full h-full p-1.5 overflow-hidden whitespace-pre-wrap leading-snug pointer-events-none flex items-start" style={{ color: element.color, fontSize: `${labelFontSize * 1.5}px`, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                        {element.label || <span className="opacity-30 italic text-sm">Click to type</span>}
                     </div>
                 )
             ) : (
@@ -180,14 +186,14 @@ const BoardElementItem = React.memo(({
             )}
 
             {showWoundCounter && !isSlain && (
-                <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none select-none">
+                <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none select-none" style={{ transform: `rotate(${-element.rotation}deg)` }}>
                     <div className="flex items-center justify-center rounded-full" style={{ width: `${Math.min(element.width, element.height) * 0.65}px`, height: `${Math.min(element.width, element.height) * 0.65}px`, backgroundColor: 'rgba(0,0,0,0.6)' }}>
                         <span className="text-white font-bold font-mono" style={{ fontSize: `${Math.min(element.width, element.height) * 0.45}px`, lineHeight: 1 }}>{currentWounds}</span>
                     </div>
                 </div>
             )}
             {isSlain && (
-                <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none" style={{ transform: `rotate(${-element.rotation}deg)` }}>
                     <Skull className="text-red-500 drop-shadow-[0_2px_4px_rgba(0,0,0,1)]" strokeWidth={2.5} size={Math.min(element.width, element.height) * 0.6} />
                 </div>
             )}
@@ -219,8 +225,8 @@ const BoardElementItem = React.memo(({
 export const Board = forwardRef<BoardRef, BoardProps>(({
   elements, setElements, lines, setLines, zones = [], mode, selectedIds, setSelectedIds,
   backgroundImage, activeColor, pixelsPerInch, boardWidth, boardHeight, onActionStart,
-  sidebarHoveredId, onRightClick, labelFontSize, sidebarOpen, auraRadius, objectivesUnlocked,
-  isTerrainLocked, showEdgeMeasurements, boardCount = 1,
+  sidebarHoveredId, onRightClick, labelFontSize, sidebarOpen, auraRadius, threatRange = 0, objectivesUnlocked,
+  isTerrainLocked, showEdgeMeasurements, boardCount = 1, boardNames = {}, onRenameBattlefield,
   showCoherencyAlerts, isTerrainVisible, areZonesVisible, onGroupRotationStart, onGroupRotate, onGroupRotationEnd, onFocusedBoardChange,
   displayMode = 'desktop', isSpacePressed = false, isTabPressed = false, onInteraction, onHover
 }, ref) => {
@@ -235,6 +241,7 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentLine, setCurrentLine] = useState<DrawingLine | null>(null);
   const [intersectedIds, setIntersectedIds] = useState<string[]>([]);
+  const [editingBoardName, setEditingBoardName] = useState<number | null>(null);
   const [selectionBoxStart, setSelectionBoxStart] = useState<{ x: number, y: number } | null>(null);
   const [currentSelectionBox, setCurrentSelectionBox] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
   const [activeDragMode, setActiveDragMode] = useState<'PAN' | 'SELECT' | null>(null);
@@ -460,6 +467,17 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
   const draggedElementIdRef = useRef(draggedElementId);
   const onActionStartRef = useRef(onActionStart);
   const lastFocusedIndexRef = useRef<number>(-1);
+  const altWheelHistorySaved = useRef(false);
+  const altWheelTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shiftKeyRef = useRef(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Shift') shiftKeyRef.current = true; };
+    const onKeyUp = (e: KeyboardEvent) => { if (e.key === 'Shift') shiftKeyRef.current = false; };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
+  }, []);
 
   useEffect(() => { panRef.current = pan; }, [pan]);
   useEffect(() => { scaleRef.current = scale; }, [scale]);
@@ -494,7 +512,15 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
 
   const handleTextBlur = useCallback((id: string) => {
       setEditingId(null);
-  }, []);
+      // Auto-delete empty text elements
+      setElements(prev => {
+          const el = prev.find(e => e.id === id);
+          if (el && el.type === ElementType.TEXT && !el.label.trim()) {
+              return prev.filter(e => e.id !== id);
+          }
+          return prev;
+      });
+  }, [setElements]);
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
@@ -541,7 +567,10 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
       }
       if (event.altKey) {
           event.preventDefault(); event.stopPropagation(); if (activeDragModeRef.current === 'SELECT' && draggedElementIdRef.current) return;
-          const direction = event.deltaY > 0 ? 1 : -1; onActionStartRef.current();
+          const direction = event.deltaY > 0 ? 1 : -1;
+          if (!altWheelHistorySaved.current) { onActionStartRef.current(); altWheelHistorySaved.current = true; }
+          if (altWheelTimeout.current) clearTimeout(altWheelTimeout.current);
+          altWheelTimeout.current = setTimeout(() => { altWheelHistorySaved.current = false; }, 500);
           setElements(prevElements => {
               const selectedSet = new Set(selectedIdsRef.current), selected = prevElements.filter(el => selectedSet.has(el.id));
               if (selected.length === 0 || selected.some(el => el.locked)) return prevElements;
@@ -696,17 +725,18 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
       else { onActionStart(); setIsDrawing(true); setCurrentLine({ x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y, color: activeColor, id: Math.random().toString(), isDeployment: true }); }
       return; 
     }
-    if (mode === InteractionMode.DRAW || mode === InteractionMode.MEASURE || mode === InteractionMode.ARROW) { 
-        onActionStart(); 
-        setIsDrawing(true); 
-        setCurrentLine({ 
-            x1: coords.x, y1: coords.y, x2: coords.x, y2: coords.y, 
-            color: activeColor, 
-            id: Math.random().toString(36).substring(2, 11), 
+    if (mode === InteractionMode.DRAW || mode === InteractionMode.MEASURE || mode === InteractionMode.ARROW) {
+        onActionStart();
+        const start = shiftKeyRef.current ? snapToGrid(coords.x, coords.y, pixelsPerInch, boardPixelWidth, boardPixelHeight, boardCount) : coords;
+        setIsDrawing(true);
+        setCurrentLine({
+            x1: start.x, y1: start.y, x2: start.x, y2: start.y,
+            color: activeColor,
+            id: Math.random().toString(36).substring(2, 11),
             isDeployment: false,
             isArrow: mode === InteractionMode.ARROW
-        }); 
-        return; 
+        });
+        return;
     }
     if (mode === InteractionMode.TEXT) {
         const clickedElement = [...elementsSortedByLayer].reverse().find(element => { 
@@ -844,7 +874,7 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
         if (activeDragMode === 'PAN' && dragStart) { setPan({ x: clientX - dragStart.x, y: clientY - dragStart.y }); if (onInteraction) onInteraction(); return; }
         if (mode === InteractionMode.SELECT && selectionBoxStart && !draggedElementId) { const w = coords.x - selectionBoxStart.x, h = coords.y - selectionBoxStart.y, newBox = { x: w < 0 ? coords.x : selectionBoxStart.x, y: h < 0 ? coords.y : selectionBoxStart.y, width: Math.abs(w), height: Math.abs(h) }; setCurrentSelectionBox(prev => { if (prev && Math.abs(prev.x - newBox.x) < 1 && Math.abs(prev.y - newBox.y) < 1 && Math.abs(prev.width - newBox.width) < 1 && Math.abs(prev.height - newBox.height) < 1) return prev; return newBox; }); }
         if (activeDragMode === 'SELECT' && draggedElementId && dragCollisionData.current) { const dx = (clientX - (dragStart?.x || 0)) / scale, dy = (clientY - (dragStart?.y || 0)) / scale, isTerrainSelection = selectedElements.length > 0 && selectedElements.every(e => e.type === ElementType.TERRAIN); setElements(prev => prev.map(el => { if (initialElementPositions[el.id]) { let newX = initialElementPositions[el.id].x + dx, newY = initialElementPositions[el.id].y + dy; if (el.type === ElementType.OBJECTIVE) { const snapped = snapToGrid(newX + el.width/2, newY + el.height/2, pixelsPerInch, boardPixelWidth, boardPixelHeight, boardCount); newX = snapped.x - el.width/2; newY = snapped.y - el.height/2; } else if (isTerrainSelection && shiftKey && el.type === ElementType.TERRAIN) { const snapped = snapToGrid(newX + el.width/2, newY + el.height/2, pixelsPerInch, boardPixelWidth, boardPixelHeight, boardCount, 0.5); newX = snapped.x - el.width/2; newY = snapped.y - el.height/2; } return { ...el, x: newX, y: newY }; } return el; })); if (onInteraction) onInteraction(); }
-        if ((mode === InteractionMode.DRAW || mode === InteractionMode.MEASURE || mode === InteractionMode.DEPLOYMENT || mode === InteractionMode.ARROW) && isDrawing && currentLine) { let targetX = coords.x, targetY = coords.y; if (mode === InteractionMode.DEPLOYMENT) { const snapped = snapToGrid(coords.x, coords.y, pixelsPerInch, boardPixelWidth, boardPixelHeight, boardCount); targetX = snapped.x; targetY = snapped.y; if (shiftKey) { const dx = Math.abs(targetX - currentLine.x1), dy = Math.abs(targetY - currentLine.y1); dx > dy ? (targetY = currentLine.y1) : (targetX = currentLine.x1); } } setCurrentLine(prev => { if (prev && Math.abs(prev.x2 - targetX) < 0.1 && Math.abs(prev.y2 - targetY) < 0.1) return prev; return { ...prev!, x2: targetX, y2: targetY } as DrawingLine; }); if (mode === InteractionMode.MEASURE) setIntersectedIds(prev => { const ni = checkLineElementIntersections({x: currentLine.x1, y: currentLine.y1}, {x: targetX, y: targetY}, elements); return (prev.length === ni.length && prev.every((id, i) => id === ni[i])) ? prev : ni; }); }
+        if ((mode === InteractionMode.DRAW || mode === InteractionMode.MEASURE || mode === InteractionMode.DEPLOYMENT || mode === InteractionMode.ARROW) && isDrawing && currentLine) { let targetX = coords.x, targetY = coords.y; if (mode === InteractionMode.DEPLOYMENT) { const snapped = snapToGrid(coords.x, coords.y, pixelsPerInch, boardPixelWidth, boardPixelHeight, boardCount); targetX = snapped.x; targetY = snapped.y; if (shiftKey) { const dx = Math.abs(targetX - currentLine.x1), dy = Math.abs(targetY - currentLine.y1); dx > dy ? (targetY = currentLine.y1) : (targetX = currentLine.x1); } } else if (shiftKeyRef.current && (mode === InteractionMode.DRAW || mode === InteractionMode.MEASURE || mode === InteractionMode.ARROW)) { const snapped = snapToGrid(coords.x, coords.y, pixelsPerInch, boardPixelWidth, boardPixelHeight, boardCount); targetX = snapped.x; targetY = snapped.y; } setCurrentLine(prev => { if (prev && Math.abs(prev.x2 - targetX) < 0.1 && Math.abs(prev.y2 - targetY) < 0.1) return prev; return { ...prev!, x2: targetX, y2: targetY } as DrawingLine; }); if (mode === InteractionMode.MEASURE) setIntersectedIds(prev => { const ni = checkLineElementIntersections({x: currentLine.x1, y: currentLine.y1}, {x: targetX, y: targetY}, elements); return (prev.length === ni.length && prev.every((id, i) => id === ni[i])) ? prev : ni; }); }
         if (isRotating && rotationSnap && rotationSnap.id) { const activeId = rotationSnap.id, el = elementMap.get(activeId); if (el) { const rads = Math.atan2(coords.y - (el.y + el.height/2), coords.x - (el.x + el.width/2)), deg = rads * (180 / Math.PI), delta = deg - rotationSnap.startAngle; let newRot = (rotationSnap.currentRotation + delta) % 360; if ((el.type === ElementType.TERRAIN || el.type === ElementType.TEXT) && shiftKey) newRot = Math.round(newRot / 15) * 15; setElements(prev => prev.map(e => e.id === activeId ? { ...e, rotation: newRot } : e)); } }
         if (isGroupRotating && rotationSnap && onGroupRotate) { const centerX = rotationSnap.center ? rotationSnap.center.x : (selectionBounds ? selectionBounds.minX + selectionBounds.width/2 : 0), centerY = rotationSnap.center ? rotationSnap.center.y : (selectionBounds ? selectionBounds.minY + selectionBounds.height/2 : 0), rads = Math.atan2(coords.y - centerY, coords.x - centerX), deg = rads * (180 / Math.PI); let delta = deg - rotationSnap.startAngle; const isTerrainOnly = selectedIds.length > 0 && selectedIds.every(id => elementMap.get(id)?.type === ElementType.TERRAIN); if (isTerrainOnly && shiftKey) delta = Math.round(delta / 15) * 15; onGroupRotate(delta); }
         if (resizeState) { 
@@ -932,12 +962,12 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
                     const newText: BoardElement = {
                         id: Math.random().toString(36).substring(2, 11),
                         type: ElementType.TEXT,
-                        x: coords.x - 100, // Centered on click roughly
-                        y: coords.y - 25,
-                        width: 200,
-                        height: 100, // Default box size
+                        x: coords.x - 75,
+                        y: coords.y - 18,
+                        width: 150,
+                        height: 36,
                         rotation: 0,
-                        label: "Double-click to edit text",
+                        label: '',
                         color: activeColor,
                         locked: false
                     };
@@ -988,9 +1018,26 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
                         {backgroundImage && <img src={backgroundImage} alt="Battlefield" className="w-full h-full object-cover opacity-80 pointer-events-none select-none" />}
                         <svg className="absolute inset-0 pointer-events-none opacity-20" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id={`boardGridPattern-${boardIndex}`} width={gridSize} height={gridSize} patternUnits="userSpaceOnUse"><path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke="#94a3b8" strokeWidth="1"/></pattern></defs><rect width="100%" height="100%" fill={`url(#boardGridPattern-${boardIndex})`} /></svg>
                         
-                        <div className="absolute bottom-full left-0 mb-2 bg-grim-900/90 border border-grim-700/80 text-grim-gold text-[10px] font-mono font-bold px-3 py-1 rounded-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] pointer-events-none select-none z-10 backdrop-blur-sm flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-grim-gold animate-pulse"></div>
-                            <span>BATTLEFIELD {boardIndex + 1}</span>
+                        <div
+                            className="absolute bottom-full left-0 mb-2 bg-grim-900/90 border border-grim-700/80 text-grim-gold text-[10px] font-mono font-bold px-3 py-1 rounded-sm shadow-[0_0_15px_rgba(0,0,0,0.5)] z-10 backdrop-blur-sm flex items-center gap-2 pointer-events-auto cursor-default select-none"
+                            onDoubleClick={(e) => { e.stopPropagation(); setEditingBoardName(boardIndex); }}
+                            title="Double-click to rename"
+                        >
+                            <div className="w-1.5 h-1.5 rounded-full bg-grim-gold animate-pulse shrink-0"></div>
+                            {editingBoardName === boardIndex ? (
+                                <input
+                                    autoFocus
+                                    className="bg-transparent border-b border-grim-gold/50 outline-none text-grim-gold text-[10px] font-mono font-bold w-28 py-0"
+                                    defaultValue={boardNames[boardIndex] || `BATTLEFIELD ${boardIndex + 1}`}
+                                    onBlur={(e) => { onRenameBattlefield?.(boardIndex, e.target.value); setEditingBoardName(null); }}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') { onRenameBattlefield?.(boardIndex, (e.target as HTMLInputElement).value); setEditingBoardName(null); } if (e.key === 'Escape') setEditingBoardName(null); }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                />
+                            ) : (
+                                <span>{boardNames[boardIndex] || `BATTLEFIELD ${boardIndex + 1}`}</span>
+                            )}
                         </div>
                     </div>
                     <div className="absolute bg-red-900/20 border-2 border-dashed border-red-800 flex items-center justify-center pointer-events-none" style={{ left: offX + relativeLeftZoneX, top: offY + zoneRelativeY, width: zoneWidth, height: zoneHeight }}>{boardIndex === 0 && <div className="text-red-500/50 font-bold uppercase tracking-[0.2em] text-2xl flex items-center gap-4"><Flag size={32} /> Attacker Muster</div>}</div>
@@ -999,10 +1046,26 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
             );
         })}
         <div style={{ transform: `translate(${BOARD_OFFSET}px, ${BOARD_OFFSET}px)`, width: '100%', height: '100%', pointerEvents: 'none' }}>
-            <svg className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-visible z-0">
+            <svg className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-visible z-[15]">
             {areZonesVisible && zones.map(zone => <polygon key={zone.id} points={zone.points.map(p => `${p.x - BOARD_OFFSET},${p.y - BOARD_OFFSET}`).join(' ')} fill={zone.color} stroke={zone.color.replace('0.3)', '0.8)')} strokeWidth={2 * lineScale} className="pointer-events-none" />)}
             {elements.map(el => el.type === ElementType.OBJECTIVE && <circle key={`obj-aura-${el.id}`} cx={el.x + el.width/2 - BOARD_OFFSET} cy={el.y + el.height/2 - BOARD_OFFSET} r={el.width/2 + (3 * pixelsPerInch)} fill="rgba(34, 197, 94, 0.1)" stroke="rgba(34, 197, 94, 0.5)" strokeWidth={2 * lineScale} strokeDasharray="5,5" className="pointer-events-none opacity-50" />)}
             {auraRadius !== null && selectedElements.map(el => el.type === ElementType.MODEL && el.currentWounds !== 0 && <circle key={`aura-${el.id}`} cx={el.x - BOARD_OFFSET + el.width/2} cy={el.y - BOARD_OFFSET + el.height/2} r={Math.max(el.width, el.height)/2 + (auraRadius * pixelsPerInch)} fill="none" stroke="#2dd4bf" strokeWidth={2 * lineScale} strokeDasharray="8 4" className="pointer-events-none opacity-80" />)}
+            {threatRange > 0 && selectedElements.map(el => {
+                if (el.type !== ElementType.MODEL || el.currentWounds === 0) return null;
+                const mStat = el.stats?.m || '6"';
+                const moveInches = parseFloat(mStat.replace(/[^0-9.]/g, '')) || 6;
+                const cx = el.x - BOARD_OFFSET + el.width / 2;
+                const cy = el.y - BOARD_OFFSET + el.height / 2;
+                const baseRadius = Math.max(el.width, el.height) / 2;
+                const moveRadius = baseRadius + (moveInches * pixelsPerInch);
+                const chargeRadius = baseRadius + ((moveInches + 7) * pixelsPerInch);
+                return (
+                    <React.Fragment key={`threat-${el.id}`}>
+                        {threatRange >= 2 && <circle cx={cx} cy={cy} r={chargeRadius} fill="rgba(251, 191, 36, 0.08)" stroke="rgba(251, 191, 36, 0.6)" strokeWidth={2 * lineScale} strokeDasharray="6 3" className="pointer-events-none" />}
+                        <circle cx={cx} cy={cy} r={moveRadius} fill="rgba(239, 68, 68, 0.08)" stroke="rgba(239, 68, 68, 0.6)" strokeWidth={2 * lineScale} strokeDasharray="8 4" className="pointer-events-none" />
+                    </React.Fragment>
+                );
+            })}
             </svg>
             {elementsSortedByLayer.map(element => {
                 const buffer = 500, viewMinX = (0 - pan.x) / scale - buffer, viewMinY = (0 - pan.y) / scale - buffer, viewMaxX = (window.innerWidth - pan.x) / scale + buffer, viewMaxY = (window.innerHeight - pan.y) / scale + buffer;
@@ -1101,13 +1164,13 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
             {lines.map(line => {
                 const x1 = line.x1 - BOARD_OFFSET, y1 = line.y1 - BOARD_OFFSET, x2 = line.x2 - BOARD_OFFSET, y2 = line.y2 - BOARD_OFFSET, dist = Math.hypot(line.x2 - line.x1, line.y2 - line.y1);
                 const angle = Math.atan2(y2 - y1, x2 - x1);
-                const arrowheadSize = 10 * lineScale;
+                const arrowheadSize = 40 * lineScale;
                 return (
                 <g key={line.id}>
                     <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={line.color} strokeWidth={4 * lineScale} strokeLinecap="round" className="opacity-70" />
                     {line.isArrow && (
                         <polygon 
-                            points={`0,0 ${-arrowheadSize},-5 ${-arrowheadSize},5`} 
+                            points={`0,0 ${-arrowheadSize},-20 ${-arrowheadSize},20`} 
                             transform={`translate(${x2},${y2}) rotate(${angle * 180 / Math.PI})`} 
                             fill={line.color} 
                             className="opacity-70"
@@ -1119,13 +1182,13 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
             {currentLine && currentLine.x1 !== undefined && (() => {
                 const x1 = currentLine.x1 - BOARD_OFFSET, y1 = currentLine.y1 - BOARD_OFFSET, x2 = (currentLine.x2 || 0) - BOARD_OFFSET, y2 = (currentLine.y2 || 0) - BOARD_OFFSET;
                 const angle = Math.atan2(y2 - y1, x2 - x1);
-                const arrowheadSize = 10 * lineScale;
+                const arrowheadSize = 40 * lineScale;
                 return (
                     <g>
                         <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={currentLine.color} strokeWidth={mode === InteractionMode.MEASURE ? (2 * lineScale) : (4 * lineScale)} strokeDasharray={mode === InteractionMode.MEASURE ? "5,5" : "0"} className="opacity-80" />
                         {currentLine.isArrow && (
                             <polygon 
-                                points={`0,0 ${-arrowheadSize},-5 ${-arrowheadSize},5`} 
+                                points={`0,0 ${-arrowheadSize},-20 ${-arrowheadSize},20`} 
                                 transform={`translate(${x2},${y2}) rotate(${angle * 180 / Math.PI})`} 
                                 fill={currentLine.color} 
                                 className="opacity-80"
@@ -1168,7 +1231,7 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
                             fontSize: `${labelFontSize}px`
                         }}
                     >
-                       {`X: ${((snappedCursor.x - BOARD_OFFSET) / pixelsPerInch).toFixed(1)}" Y: ${((snappedCursor.y - BOARD_OFFSET) / pixelsPerInch).toFixed(1)}"`}
+                       {(() => { const relX = snappedCursor.x - BOARD_OFFSET; const relY = snappedCursor.y - BOARD_OFFSET; const col = Math.floor(relX / hPitch); const row = Math.floor(relY / vPitch); const localX = relX - (col * hPitch); const localY = relY - (row * vPitch); return `X: ${(localX / pixelsPerInch).toFixed(1)}" Y: ${(localY / pixelsPerInch).toFixed(1)}"`; })()}
                     </div>
                 </>
             )}

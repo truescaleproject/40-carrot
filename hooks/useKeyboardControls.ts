@@ -20,6 +20,7 @@ const KEY_BINDINGS = {
     TERRAIN: 'KeyH',
     SIDEBAR: 'KeyO',
     TERRAIN_LOCK: 'KeyL',
+    THREAT_RANGE: 'KeyT',
   },
   ACTIONS: {
     GROUP: 'KeyG',
@@ -56,7 +57,8 @@ interface UseKeyboardControlsProps {
   cycleAuraRadius: () => void;
   toggleEdgeMeasurements: () => void;
   toggleTerrainVisibility: () => void;
-  
+  cycleThreatRange: () => void;
+
   // State Checks
   canUndo: boolean;
   canRedo: boolean;
@@ -171,6 +173,7 @@ export const useKeyboardControls = (props: UseKeyboardControlsProps) => {
       if (code === KEY_BINDINGS.TOGGLES.TERRAIN) p.toggleTerrainVisibility();
       if (code === KEY_BINDINGS.TOGGLES.SIDEBAR && !isMod) p.setSidebarOpen(prev => !prev);
       if (code === KEY_BINDINGS.TOGGLES.TERRAIN_LOCK) p.onToggleTerrainLock();
+      if (code === KEY_BINDINGS.TOGGLES.THREAT_RANGE && !isMod) p.cycleThreatRange();
 
       // --- TOOLS ---
       // Only switch tools if NO modifier keys are pressed (to avoid conflicts)

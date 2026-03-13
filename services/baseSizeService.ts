@@ -1,5 +1,5 @@
 
-export const RAW_BASE_SIZE_DATA = `
+const RAW_BASE_SIZE_DATA = `
 ADEPTA SORORITAS
 Aestred Thurga and Agathae Dolan: Aestred Thurga 32mm
 Aestred Thurga and Agathae Dolan: Agathae Dolan 25mm

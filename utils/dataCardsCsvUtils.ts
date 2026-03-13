@@ -25,7 +25,7 @@ const HEADERS = {
 
 const ESCAPE_REGEX = /[,"\n\r]/;
 
-const escapeCol = (val: any): string => {
+const escapeCol = (val: string | number | undefined | null): string => {
   const str = String(val ?? '').trim();
   if (ESCAPE_REGEX.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;

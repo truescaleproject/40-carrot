@@ -8,10 +8,10 @@ import { APP_VERSION } from '../constants';
  * @param data The raw JSON object loaded from a save file
  * @returns The migrated data object safe for use in the current app version
  */
-export const migrateSaveData = (data: any): any => {
+export const migrateSaveData = (data: Record<string, unknown>): Record<string, unknown> => {
   if (!data) return data;
 
-  const dataVersion = data.appVersion;
+  const dataVersion = data.appVersion as string | undefined;
 
   // Placeholder for future migration logic
   if (dataVersion !== APP_VERSION) {
