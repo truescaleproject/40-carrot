@@ -181,7 +181,9 @@ const BoardElementItem = React.memo(({
 
             {showWoundCounter && !isSlain && (
                 <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none select-none">
-                    <span className="text-white font-bold font-mono drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" style={{ fontSize: `${Math.min(element.width, element.height) * 0.5}px` }}>{currentWounds}</span>
+                    <div className="flex items-center justify-center rounded-full" style={{ width: `${Math.min(element.width, element.height) * 0.65}px`, height: `${Math.min(element.width, element.height) * 0.65}px`, backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                        <span className="text-white font-bold font-mono" style={{ fontSize: `${Math.min(element.width, element.height) * 0.45}px`, lineHeight: 1 }}>{currentWounds}</span>
+                    </div>
                 </div>
             )}
             {isSlain && (
