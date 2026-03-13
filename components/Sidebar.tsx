@@ -103,6 +103,7 @@ interface SidebarProps {
   handleLoadPresetMap: (index: number) => void;
   focusedBoardIndex: number;
   updateSelectedShape: (shape: 'CIRCLE' | 'RECTANGLE') => void;
+  updateElementProp: (prop: string, value: any) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = (props) => {
@@ -251,6 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = (props) => {
                         updateColor={props.updateBatchColor}
                         toggleLocked={() => props.toggleLocked([singleSelectedElement.id])}
                         updateSelectedShape={props.updateSelectedShape}
+                        updateElementProp={props.updateElementProp}
                     />
                 )}
 

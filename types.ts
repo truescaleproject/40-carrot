@@ -59,6 +59,11 @@ export interface BoardElement {
   side?: 'ATTACKER' | 'DEFENDER'; // Side assignment
   locked?: boolean; // If true, prevents dragging/interaction
   shape?: 'CIRCLE' | 'RECTANGLE'; // Shape override
+  // Text formatting (TEXT elements only)
+  fontSize?: number; // px, default 18
+  fontWeight?: 'normal' | 'bold';
+  fontStyle?: 'normal' | 'italic';
+  textAlign?: 'left' | 'center' | 'right';
 }
 
 export interface DrawingLine {

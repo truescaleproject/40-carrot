@@ -152,12 +152,20 @@ const BoardElementItem = React.memo(({
                 </div>
             )}
             
-            {isText ? (
-                isEditing ? (
+            {isText ? (() => {
+                const textStyle: React.CSSProperties = {
+                    color: element.color,
+                    fontSize: `${element.fontSize || 18}px`,
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    fontWeight: element.fontWeight || 'normal',
+                    fontStyle: element.fontStyle || 'normal',
+                    textAlign: element.textAlign || 'left',
+                };
+                return isEditing ? (
                     <textarea
                         autoFocus
                         className="w-full h-full bg-transparent text-white p-1.5 border border-dashed border-white/30 rounded-sm resize-none focus:outline-none focus:border-white/50 leading-snug"
-                        style={{ color: element.color, fontSize: `${labelFontSize * 1.5}px`, fontFamily: 'system-ui, -apple-system, sans-serif' }}
+                        style={textStyle}
                         value={element.label}
                         placeholder="Type here..."
                         onChange={(e) => onTextChange(element.id, e.target.value)}
@@ -166,11 +174,11 @@ const BoardElementItem = React.memo(({
                         onMouseDown={(e) => e.stopPropagation()}
                     />
                 ) : (
-                    <div className="w-full h-full p-1.5 overflow-hidden whitespace-pre-wrap leading-snug pointer-events-none flex items-start" style={{ color: element.color, fontSize: `${labelFontSize * 1.5}px`, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                    <div className="w-full h-full p-1.5 overflow-hidden whitespace-pre-wrap leading-snug pointer-events-none" style={{ ...textStyle, display: 'flex', alignItems: element.textAlign === 'center' ? 'start' : 'start', justifyContent: element.textAlign === 'center' ? 'center' : (element.textAlign === 'right' ? 'flex-end' : 'flex-start') }}>
                         {element.label || <span className="opacity-30 italic text-sm">Click to type</span>}
                     </div>
-                )
-            ) : (
+                );
+            })() : (
                 isObjective ? (
                     <span className="text-[10px] pointer-events-none" style={{fontSize: `${Math.max(10, labelFontSize * 0.7)}px`}}>{element.label}</span>
                 ) : (

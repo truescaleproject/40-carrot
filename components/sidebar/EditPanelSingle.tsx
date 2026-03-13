@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, Minus, Plus, Image as ImageIcon, Trash2, Lock, Unlock, Flag, ChevronUp, ChevronDown, Move, Circle, Square } from 'lucide-react';
+import { Activity, Minus, Plus, Image as ImageIcon, Trash2, Lock, Unlock, Flag, ChevronUp, ChevronDown, Move, Circle, Square, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Type } from 'lucide-react';
 import { BoardElement, ElementType, ModelStats, Weapon } from '../../types';
 import { MM_PER_INCH } from '../../constants';
 import { StatsInputs, WeaponsList, ColorPicker } from './SidebarHelpers';
@@ -26,25 +26,27 @@ interface EditPanelSingleProps {
     updateColor: (color: string) => void;
     toggleLocked: () => void;
     updateSelectedShape: (shape: 'CIRCLE' | 'RECTANGLE') => void;
+    updateElementProp: (prop: string, value: any) => void;
 }
 
 export const EditPanelSingle: React.FC<EditPanelSingleProps> = ({
     element, updateSelectedLabel, updateSelectedSide, updateSelectedDimensions, updateSelectedRotation, pixelsPerInch,
     updateSelectedModelStat, adjustWounds, addWeapon, removeWeapon, updateWeapon,
     addWeaponModifier, removeWeaponModifier, updateWeaponModifier, addingModifierToWeaponId, setAddingModifierToWeaponId,
-    removeElementImage, handleImageUpload, updateColor, toggleLocked, updateSelectedShape
+    removeElementImage, handleImageUpload, updateColor, toggleLocked, updateSelectedShape, updateElementProp
 }) => {
     const [isStatsOpen, setIsStatsOpen] = useState(true);
     const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
 
     const isModel = element.type === ElementType.MODEL;
+    const isText = element.type === ElementType.TEXT;
 
     return (
         <div className="space-y-4 animate-in fade-in duration-200">
             {/* Identity Section - Top Priority */}
             <div className="space-y-2">
                 <div className="flex justify-between items-end mb-1">
-                    <span className="text-[10px] font-bold text-text-muted uppercase">Selected Unit Properties</span>
+                    <span className="text-[10px] font-bold text-text-muted uppercase">{isText ? 'Text Properties' : 'Selected Unit Properties'}</span>
                 </div>
                 <div className="flex gap-2">
                     <button 
@@ -149,127 +151,200 @@ export const EditPanelSingle: React.FC<EditPanelSingleProps> = ({
                 </div>
             )}
 
-            {/* Appearance & Transform - Collapsible */}
-            <div className="border border-grim-700 rounded bg-grim-800/50 overflow-hidden">
-                <button 
-                    onClick={() => setIsAppearanceOpen(!isAppearanceOpen)}
-                    className="w-full flex justify-between items-center p-2 bg-grim-800 text-xs font-bold text-text-secondary hover:text-text-primary hover:bg-grim-700 transition-colors"
-                >
-                    <span className="flex items-center gap-2"><Move size={14}/> Base, Color & Image</span>
-                    {isAppearanceOpen ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                </button>
-
-                {(isAppearanceOpen || !isModel) && (
+            {/* Text Formatting - Only for TEXT elements */}
+            {isText && (
+                <div className="border border-grim-700 rounded bg-grim-800/50 overflow-hidden">
                     <div className="p-3 border-t border-grim-700 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                        {/* Shape Toggle for Models */}
-                        {isModel && (
-                            <div className="flex justify-between items-center bg-grim-900/50 p-2 rounded border border-grim-700/50">
-                                <label className="text-[10px] uppercase font-bold text-text-muted">Base Shape</label>
-                                <div className="flex gap-1 bg-grim-800 p-0.5 rounded border border-grim-600">
-                                    <button 
-                                        onClick={() => updateSelectedShape('CIRCLE')}
-                                        className={`p-1.5 rounded transition-all ${(!element.shape || element.shape === 'CIRCLE') ? 'bg-grim-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                                        title="Circular / Oval"
-                                    >
-                                        <Circle size={14} />
-                                    </button>
-                                    <button 
-                                        onClick={() => updateSelectedShape('RECTANGLE')}
-                                        className={`p-1.5 rounded transition-all ${element.shape === 'RECTANGLE' ? 'bg-grim-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                                        title="Rectangular / Square"
-                                    >
-                                        <Square size={14} />
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Color */}
-                        <ColorPicker activeColor={element.color} onColorSelect={updateColor} label="Base Color" />
-
-                        {/* Dimensions */}
+                        {/* Font Size */}
                         <div>
                             <label className="text-[10px] uppercase font-bold text-text-muted mb-1 flex justify-between">
-                                <span>Dimensions ({isModel ? 'Base mm' : 'Inches'})</span>
+                                <span>Font Size</span>
+                                <span className="font-mono text-text-primary">{element.fontSize || 18}px</span>
                             </label>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] text-text-muted font-bold w-4">W</span>
-                                <input 
-                                    type="range" 
-                                    min={element.type === ElementType.TERRAIN ? 0.5 : 10} 
-                                    max={element.type === ElementType.TERRAIN ? 24 : 160}
-                                    step={element.type === ElementType.TERRAIN ? 0.5 : 1}
-                                    value={element.type === ElementType.TERRAIN ? element.width / pixelsPerInch : (element.width / pixelsPerInch * MM_PER_INCH)} 
-                                    onChange={e => {
-                                        const val = Number(e.target.value);
-                                        const px = element.type === ElementType.TERRAIN ? val * pixelsPerInch : (val / MM_PER_INCH * pixelsPerInch);
-                                        updateSelectedDimensions('width', px);
-                                    }}
-                                    className="flex-1 h-1 bg-grim-600 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <span className="text-[9px] w-8 text-right font-mono text-text-primary">
-                                    {element.type === ElementType.TERRAIN ? (element.width / pixelsPerInch).toFixed(1) : Math.round(element.width / pixelsPerInch * MM_PER_INCH)}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[9px] text-text-muted font-bold w-4">H</span>
-                                <input 
-                                    type="range" 
-                                    min={element.type === ElementType.TERRAIN ? 0.5 : 10} 
-                                    max={element.type === ElementType.TERRAIN ? 24 : 160}
-                                    step={element.type === ElementType.TERRAIN ? 0.5 : 1}
-                                    value={element.type === ElementType.TERRAIN ? element.height / pixelsPerInch : (element.height / pixelsPerInch * MM_PER_INCH)} 
-                                    onChange={e => {
-                                        const val = Number(e.target.value);
-                                        const px = element.type === ElementType.TERRAIN ? val * pixelsPerInch : (val / MM_PER_INCH * pixelsPerInch);
-                                        updateSelectedDimensions('height', px);
-                                    }}
-                                    className="flex-1 h-1 bg-grim-600 rounded-lg appearance-none cursor-pointer"
-                                />
-                                <span className="text-[9px] w-8 text-right font-mono text-text-primary">
-                                    {element.type === ElementType.TERRAIN ? (element.height / pixelsPerInch).toFixed(1) : Math.round(element.height / pixelsPerInch * MM_PER_INCH)}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Rotation */}
-                        <div>
-                            <label className="text-[10px] uppercase font-bold text-text-muted mb-1 flex justify-between">
-                                <span>Rotation</span>
-                                <span className="font-mono text-text-primary">{Math.round(element.rotation)}°</span>
-                            </label>
-                            <input 
-                                type="range" 
-                                min="0" 
-                                max="360" 
-                                value={element.rotation} 
-                                onChange={e => updateSelectedRotation(Number(e.target.value))}
+                            <input
+                                type="range"
+                                min="8"
+                                max="72"
+                                step="1"
+                                value={element.fontSize || 18}
+                                onChange={e => updateElementProp('fontSize', Number(e.target.value))}
                                 className="w-full h-1 bg-grim-600 rounded-lg appearance-none cursor-pointer"
                             />
                         </div>
 
-                        {/* Image */}
+                        {/* Bold / Italic */}
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => updateElementProp('fontWeight', element.fontWeight === 'bold' ? 'normal' : 'bold')}
+                                className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded border transition-colors ${element.fontWeight === 'bold' ? 'bg-grim-600 border-grim-500 text-white' : 'bg-grim-800 border-grim-700 text-text-muted hover:text-text-primary'}`}
+                            >
+                                <Bold size={14}/> Bold
+                            </button>
+                            <button
+                                onClick={() => updateElementProp('fontStyle', element.fontStyle === 'italic' ? 'normal' : 'italic')}
+                                className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold rounded border transition-colors ${element.fontStyle === 'italic' ? 'bg-grim-600 border-grim-500 text-white' : 'bg-grim-800 border-grim-700 text-text-muted hover:text-text-primary'}`}
+                            >
+                                <Italic size={14}/> Italic
+                            </button>
+                        </div>
+
+                        {/* Text Alignment */}
                         <div>
-                            <label className="text-[10px] uppercase font-bold text-text-muted mb-1 block">Image / Texture</label>
-                            <div className="flex gap-2">
-                                <label className={`flex-1 bg-grim-700 hover:bg-grim-600 text-slate-300 text-[10px] py-1.5 px-2 ${element.image ? 'rounded-l' : 'rounded'} cursor-pointer flex items-center justify-center gap-1 transition-colors border border-grim-600`}>
-                                    <ImageIcon size={12}/> {element.image ? 'Change' : 'Upload'}
-                                    <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'model')} />
-                                </label>
-                                {element.image && (
-                                    <button 
-                                        onClick={removeElementImage}
-                                        className="bg-red-900/50 hover:bg-red-800 text-red-200 px-2 rounded-r flex items-center justify-center border border-l-0 border-red-900"
-                                        title="Remove Image"
-                                    >
-                                        <Trash2 size={12} />
-                                    </button>
-                                )}
+                            <label className="text-[10px] uppercase font-bold text-text-muted mb-1 block">Alignment</label>
+                            <div className="flex gap-1 bg-grim-800 p-0.5 rounded border border-grim-600">
+                                <button
+                                    onClick={() => updateElementProp('textAlign', 'left')}
+                                    className={`flex-1 p-1.5 rounded transition-all flex items-center justify-center ${(!element.textAlign || element.textAlign === 'left') ? 'bg-grim-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                                    title="Align Left"
+                                >
+                                    <AlignLeft size={14} />
+                                </button>
+                                <button
+                                    onClick={() => updateElementProp('textAlign', 'center')}
+                                    className={`flex-1 p-1.5 rounded transition-all flex items-center justify-center ${element.textAlign === 'center' ? 'bg-grim-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                                    title="Align Center"
+                                >
+                                    <AlignCenter size={14} />
+                                </button>
+                                <button
+                                    onClick={() => updateElementProp('textAlign', 'right')}
+                                    className={`flex-1 p-1.5 rounded transition-all flex items-center justify-center ${element.textAlign === 'right' ? 'bg-grim-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                                    title="Align Right"
+                                >
+                                    <AlignRight size={14} />
+                                </button>
                             </div>
                         </div>
+
+                        {/* Text Color */}
+                        <ColorPicker activeColor={element.color} onColorSelect={updateColor} label="Text Color" />
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {/* Appearance & Transform - Collapsible (non-TEXT elements) */}
+            {!isText && (
+                <div className="border border-grim-700 rounded bg-grim-800/50 overflow-hidden">
+                    <button
+                        onClick={() => setIsAppearanceOpen(!isAppearanceOpen)}
+                        className="w-full flex justify-between items-center p-2 bg-grim-800 text-xs font-bold text-text-secondary hover:text-text-primary hover:bg-grim-700 transition-colors"
+                    >
+                        <span className="flex items-center gap-2"><Move size={14}/> Base, Color & Image</span>
+                        {isAppearanceOpen ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                    </button>
+
+                    {(isAppearanceOpen || !isModel) && (
+                        <div className="p-3 border-t border-grim-700 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                            {/* Shape Toggle for Models */}
+                            {isModel && (
+                                <div className="flex justify-between items-center bg-grim-900/50 p-2 rounded border border-grim-700/50">
+                                    <label className="text-[10px] uppercase font-bold text-text-muted">Base Shape</label>
+                                    <div className="flex gap-1 bg-grim-800 p-0.5 rounded border border-grim-600">
+                                        <button
+                                            onClick={() => updateSelectedShape('CIRCLE')}
+                                            className={`p-1.5 rounded transition-all ${(!element.shape || element.shape === 'CIRCLE') ? 'bg-grim-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                                            title="Circular / Oval"
+                                        >
+                                            <Circle size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => updateSelectedShape('RECTANGLE')}
+                                            className={`p-1.5 rounded transition-all ${element.shape === 'RECTANGLE' ? 'bg-grim-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                                            title="Rectangular / Square"
+                                        >
+                                            <Square size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Color */}
+                            <ColorPicker activeColor={element.color} onColorSelect={updateColor} label="Base Color" />
+
+                            {/* Dimensions */}
+                            <div>
+                                <label className="text-[10px] uppercase font-bold text-text-muted mb-1 flex justify-between">
+                                    <span>Dimensions ({isModel ? 'Base mm' : 'Inches'})</span>
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[9px] text-text-muted font-bold w-4">W</span>
+                                    <input
+                                        type="range"
+                                        min={element.type === ElementType.TERRAIN ? 0.5 : 10}
+                                        max={element.type === ElementType.TERRAIN ? 24 : 160}
+                                        step={element.type === ElementType.TERRAIN ? 0.5 : 1}
+                                        value={element.type === ElementType.TERRAIN ? element.width / pixelsPerInch : (element.width / pixelsPerInch * MM_PER_INCH)}
+                                        onChange={e => {
+                                            const val = Number(e.target.value);
+                                            const px = element.type === ElementType.TERRAIN ? val * pixelsPerInch : (val / MM_PER_INCH * pixelsPerInch);
+                                            updateSelectedDimensions('width', px);
+                                        }}
+                                        className="flex-1 h-1 bg-grim-600 rounded-lg appearance-none cursor-pointer"
+                                    />
+                                    <span className="text-[9px] w-8 text-right font-mono text-text-primary">
+                                        {element.type === ElementType.TERRAIN ? (element.width / pixelsPerInch).toFixed(1) : Math.round(element.width / pixelsPerInch * MM_PER_INCH)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-[9px] text-text-muted font-bold w-4">H</span>
+                                    <input
+                                        type="range"
+                                        min={element.type === ElementType.TERRAIN ? 0.5 : 10}
+                                        max={element.type === ElementType.TERRAIN ? 24 : 160}
+                                        step={element.type === ElementType.TERRAIN ? 0.5 : 1}
+                                        value={element.type === ElementType.TERRAIN ? element.height / pixelsPerInch : (element.height / pixelsPerInch * MM_PER_INCH)}
+                                        onChange={e => {
+                                            const val = Number(e.target.value);
+                                            const px = element.type === ElementType.TERRAIN ? val * pixelsPerInch : (val / MM_PER_INCH * pixelsPerInch);
+                                            updateSelectedDimensions('height', px);
+                                        }}
+                                        className="flex-1 h-1 bg-grim-600 rounded-lg appearance-none cursor-pointer"
+                                    />
+                                    <span className="text-[9px] w-8 text-right font-mono text-text-primary">
+                                        {element.type === ElementType.TERRAIN ? (element.height / pixelsPerInch).toFixed(1) : Math.round(element.height / pixelsPerInch * MM_PER_INCH)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Rotation */}
+                            <div>
+                                <label className="text-[10px] uppercase font-bold text-text-muted mb-1 flex justify-between">
+                                    <span>Rotation</span>
+                                    <span className="font-mono text-text-primary">{Math.round(element.rotation)}°</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="360"
+                                    value={element.rotation}
+                                    onChange={e => updateSelectedRotation(Number(e.target.value))}
+                                    className="w-full h-1 bg-grim-600 rounded-lg appearance-none cursor-pointer"
+                                />
+                            </div>
+
+                            {/* Image */}
+                            <div>
+                                <label className="text-[10px] uppercase font-bold text-text-muted mb-1 block">Image / Texture</label>
+                                <div className="flex gap-2">
+                                    <label className={`flex-1 bg-grim-700 hover:bg-grim-600 text-slate-300 text-[10px] py-1.5 px-2 ${element.image ? 'rounded-l' : 'rounded'} cursor-pointer flex items-center justify-center gap-1 transition-colors border border-grim-600`}>
+                                        <ImageIcon size={12}/> {element.image ? 'Change' : 'Upload'}
+                                        <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'model')} />
+                                    </label>
+                                    {element.image && (
+                                        <button
+                                            onClick={removeElementImage}
+                                            className="bg-red-900/50 hover:bg-red-800 text-red-200 px-2 rounded-r flex items-center justify-center border border-l-0 border-red-900"
+                                            title="Remove Image"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

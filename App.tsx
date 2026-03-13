@@ -622,6 +622,11 @@ export const App = () => {
       setElements(prev => prev.map(el => selectedIdSet.has(el.id) ? { ...el, color, strokeColor: color } : el));
   }, [selectedIdSet, saveHistory, elements, lines, zones]);
 
+  const updateElementProp = useCallback((prop: string, value: any) => {
+      saveHistory({ elements, lines, zones });
+      setElements(prev => prev.map(el => selectedIdSet.has(el.id) ? { ...el, [prop]: value } : el));
+  }, [selectedIdSet, saveHistory, elements, lines, zones]);
+
   const updateGroupLabel = useCallback((label: string) => {
       saveHistory({ elements, lines, zones });
       setElements(prev => prev.map(el => selectedIdSet.has(el.id) ? { ...el, groupLabel: label } : el));
@@ -702,6 +707,7 @@ export const App = () => {
               if (data.boardHeight) setBoardHeight(data.boardHeight);
               if (data.boardCount) setBoardCount(data.boardCount);
               if (data.settings) setSettings(data.settings);
+              setIsTerrainLocked(true);
           } catch (err) {
               console.error("Failed to load state", err);
               alert("Invalid save file");
@@ -757,6 +763,7 @@ export const App = () => {
           if (data.boardCount) setBoardCount(data.boardCount);
           if (data.boardNames) setBoardNames(data.boardNames);
           if (data.settings) setSettings(data.settings);
+          setIsTerrainLocked(true);
           return true;
       } catch (err) {
           console.error("Failed to load local save", err);
@@ -796,6 +803,7 @@ export const App = () => {
               if (data.boardHeight) setBoardHeight(data.boardHeight);
               if (data.boardCount) setBoardCount(data.boardCount);
               if (data.boardNames) setBoardNames(data.boardNames);
+              setIsTerrainLocked(true);
           }
       } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -830,6 +838,7 @@ export const App = () => {
                   setElements(prev => [...prev.filter(e => e.type !== ElementType.TERRAIN), ...data.terrain]);
                   if (data.boardWidth) setBoardWidth(data.boardWidth);
                   if (data.boardHeight) setBoardHeight(data.boardHeight);
+                  setIsTerrainLocked(true);
               }
           } catch (err) {
               console.error("Failed to load map", err);
@@ -963,6 +972,7 @@ export const App = () => {
           ]);
           setBoardWidth(map.boardWidth);
           setBoardHeight(map.boardHeight);
+          setIsTerrainLocked(true);
       }
   }, [saveHistory, elements, lines, zones, focusedBoardIndex, boardWidth, boardHeight]);
 
@@ -1469,7 +1479,7 @@ export const App = () => {
                     labelFontSize={settings.labelFontSize}
                     auraRadius={auraRadius}
                     threatRange={threatRange}
-                    objectivesUnlocked={!isObjectivesLocked}
+                    objectivesUnlocked={activeBottomPanel === 'OBJECTIVES'}
                     isTerrainLocked={isTerrainLocked}
                     showEdgeMeasurements={showEdgeMeasurements}
                     showCoherencyAlerts={settings.showCoherencyAlerts}
@@ -1539,6 +1549,7 @@ export const App = () => {
                             startGroupRotation={() => {}} applyGroupRotation={() => {}} commitGroupRotation={() => {}}
                             handleLoadPresetMap={handleLoadPresetMap} focusedBoardIndex={focusedBoardIndex}
                             updateSelectedShape={updateSelectedShape}
+                            updateElementProp={updateElementProp}
                         />
                     )}
                     <div className="flex-1 flex flex-col relative">
@@ -1585,7 +1596,7 @@ export const App = () => {
                                     sidebarOpen={sidebarOpen}
                                     auraRadius={auraRadius}
                                     threatRange={threatRange}
-                                    objectivesUnlocked={!isObjectivesLocked}
+                                    objectivesUnlocked={activeBottomPanel === 'OBJECTIVES'}
                                     isTerrainLocked={isTerrainLocked}
                                     showEdgeMeasurements={showEdgeMeasurements}
                                     boardCount={boardCount}
