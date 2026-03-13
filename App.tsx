@@ -433,13 +433,24 @@ export const App = () => {
       if (isSingleGroup) ungroupSelected(); else groupSelected(); 
   }, [isSingleGroup, ungroupSelected, groupSelected]);
   
-  const onClearLines = useCallback(() => { 
-      saveHistory({ elements, lines, zones }); 
+  const onClearLines = useCallback(() => {
+      saveHistory({ elements, lines, zones });
       setLines(prev => prev.filter(l => {
+          if (l.isArrow) return true; // Keep arrows
           const midX = (l.x1 + l.x2) / 2;
           const midY = (l.y1 + l.y2) / 2;
           return getBoardIndexForPoint(midX, midY) !== focusedBoardIndex;
-      })); 
+      }));
+  }, [saveHistory, elements, lines, zones, focusedBoardIndex, boardWidth, boardHeight]);
+
+  const onClearArrows = useCallback(() => {
+      saveHistory({ elements, lines, zones });
+      setLines(prev => prev.filter(l => {
+          if (!l.isArrow) return true; // Keep non-arrows
+          const midX = (l.x1 + l.x2) / 2;
+          const midY = (l.y1 + l.y2) / 2;
+          return getBoardIndexForPoint(midX, midY) !== focusedBoardIndex;
+      }));
   }, [saveHistory, elements, lines, zones, focusedBoardIndex, boardWidth, boardHeight]);
 
   const onClearZones = useCallback(() => { 
@@ -1548,7 +1559,7 @@ export const App = () => {
                                 sidebarOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
                                 auraRadius={auraRadius} cycleAuraRadius={cycleAuraRadius}
                                 threatRange={threatRange} cycleThreatRange={cycleThreatRange}
-                                clearLines={onClearLines} clearDeploymentZones={onClearZones}
+                                clearLines={onClearLines} clearArrows={onClearArrows} clearDeploymentZones={onClearZones}
                                 onClearText={onClearText}
                                 isTerrainLocked={isTerrainLocked} toggleTerrainLock={toggleTerrainLock}
                                 showEdgeMeasurements={showEdgeMeasurements} toggleEdgeMeasurements={toggleEdgeMeasurements}

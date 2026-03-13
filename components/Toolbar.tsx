@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { InteractionMode } from '../types';
 import { 
-  MousePointer2, Hand, Pencil, Ruler, ScanLine, Undo2, Redo2, CircleDashed, Eraser, SquareX, Lock, Unlock, Maximize, Mountain, SquareDashed, PanelLeft, MoveRight, Type, MessageSquareX, Crosshair
+  MousePointer2, Hand, Pencil, Ruler, ScanLine, Undo2, Redo2, CircleDashed, Eraser, SquareX, Lock, Unlock, Maximize, Mountain, SquareDashed, PanelLeft, MoveRight, Type, MessageSquareX, Crosshair, ArrowUpRight
 } from 'lucide-react';
 
 interface ToolbarProps {
@@ -19,6 +19,7 @@ interface ToolbarProps {
   threatRange: number;
   cycleThreatRange: () => void;
   clearLines: () => void;
+  clearArrows: () => void;
   clearDeploymentZones: () => void;
   onClearText: () => void;
   isTerrainLocked: boolean;
@@ -33,7 +34,7 @@ interface ToolbarProps {
 
 export const Toolbar: React.FC<ToolbarProps> = ({
   mode, setMode, undo, redo, canUndo, canRedo, sidebarOpen, toggleSidebar,
-  auraRadius, cycleAuraRadius, threatRange, cycleThreatRange, clearLines, clearDeploymentZones, onClearText,
+  auraRadius, cycleAuraRadius, threatRange, cycleThreatRange, clearLines, clearArrows, clearDeploymentZones, onClearText,
   isTerrainLocked, toggleTerrainLock, showEdgeMeasurements, toggleEdgeMeasurements,
   isTerrainVisible, toggleTerrainVisibility, areZonesVisible, toggleZoneVisibility
 }) => {
@@ -197,6 +198,15 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     >
                         <Eraser size={18} />
                         <Tooltip text="Clear Drawn Lines" shortcut="[" />
+                    </button>
+
+                    <button
+                        onClick={clearArrows}
+                        aria-label="Clear Arrows"
+                        className="relative group p-2 text-text-muted hover:text-text-primary hover:bg-grim-800 rounded-full transition-colors"
+                    >
+                        <ArrowUpRight size={18} />
+                        <Tooltip text="Clear Arrows" />
                     </button>
 
                     <button

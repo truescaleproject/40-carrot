@@ -1183,7 +1183,7 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
                             className="opacity-70"
                         />
                     )}
-                    {(!line.isDeployment || mode === InteractionMode.DEPLOYMENT) && ( <g transform={`translate(${(x1 + x2) / 2}, ${(y1 + y2) / 2}) scale(${counterScale})`}><text x="0" y="0" fill="white" className="font-bold font-mono" textAnchor="middle" dy="-8" stroke="black" strokeWidth="4" paintOrder="stroke" style={{ fontSize: `${labelFontSize}px` }}>{(dist / pixelsPerInch).toFixed(1)}"</text></g>)}
+                    {!line.isArrow && (!line.isDeployment || mode === InteractionMode.DEPLOYMENT) && ( <g transform={`translate(${(x1 + x2) / 2}, ${(y1 + y2) / 2}) scale(${counterScale})`}><text x="0" y="0" fill="white" className="font-bold font-mono" textAnchor="middle" dy="-8" stroke="black" strokeWidth="4" paintOrder="stroke" style={{ fontSize: `${labelFontSize}px` }}>{(dist / pixelsPerInch).toFixed(1)}"</text></g>)}
                 </g>
             )})}
             {currentLine && currentLine.x1 !== undefined && (() => {
@@ -1201,9 +1201,11 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
                                 className="opacity-80"
                             />
                         )}
+                        {!currentLine.isArrow && (
                         <g transform={`translate(${(x1 + x2) / 2}, ${(y1 + y2) / 2}) scale(${counterScale})`}>
                             <text x="0" y="0" fill="white" className="font-bold font-mono" textAnchor="middle" dy="-10" stroke="black" strokeWidth="4" paintOrder="stroke" style={{ fontSize: `${labelFontSize}px` }}>{(Math.hypot(x2 - x1, y2 - y1) / pixelsPerInch).toFixed(1)}"</text>
                         </g>
+                        )}
                     </g>
                 );
             })()}
