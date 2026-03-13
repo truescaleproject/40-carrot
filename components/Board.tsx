@@ -355,8 +355,9 @@ export const Board = forwardRef<BoardRef, BoardProps>(({
     groups.forEach((els, key) => {
         // Use the label of the first element. If grouped, they should share labels.
         const first = els[0];
-        const baseLabel = first.groupLabel || first.label || "Unknown";
-        const text = els.length > 1 ? `${baseLabel} ×${els.length}` : baseLabel;
+        const text = els.length > 1
+            ? `${first.groupLabel || first.label || "Unknown"} ×${els.length}`
+            : (first.label || "Unknown");
         
         // Estimate Screen Size
         const screenWidth = (text.length * (labelFontSize * 0.6)) + 16;
